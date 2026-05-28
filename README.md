@@ -5,8 +5,7 @@
 
 A template Python project that **teaches engineers to solve real engineering
 problems in Python** — and shows that the open-source scientific stack
-(`numpy`, `scipy`, and friends) can replace expensive proprietary tools like
-MATLAB and Maplesoft.
+(`numpy`, `scipy`, and friends) can replace expensive proprietary tools.
 
 You get:
 
@@ -368,8 +367,8 @@ first-principles-code/
 
 ## The console GUI
 
-`gui.py` is a small tkinter app that mimics the MATLAB/Maplesoft command
-window. Launch it with:
+`gui.py` is a small tkinter app that mimics the technical computing command
+window interface. Launch it with:
 
 ```bash
 uv run gui.py
