@@ -60,10 +60,11 @@ visualize, and trust." Listed roughly in order of payoff. Items marked
 2. **Plotting with matplotlib (done)** — turning result arrays into figures
    (`main.py` plots position/velocity/acceleration vs time and saves a PNG).
    The figure is usually the real engineering deliverable.
-3. **The wider SciPy toolbox** — root finding (`optimize.brentq`, `fsolve`),
-   curve fitting to test data (`optimize.curve_fit`), general ODE simulation
-   (`integrate.solve_ivp`, the principled version of the Euler loop in
-   `controls.py`), and interpolation (`scipy.interpolate`).
+3. **The wider SciPy toolbox (partly done)** — general ODE simulation with
+   `integrate.solve_ivp` (`Dynamics.simulate_projectile_drag`,
+   `Modal.simulate_free_vibration`) and curve fitting with `optimize.curve_fit`
+   (`Modal.fit_damped_response`) are implemented. Still open: root finding
+   (`optimize.brentq`, `fsolve`) and interpolation (`scipy.interpolate`).
 4. **Physical units with Pint (done)** — quantities that carry units,
    auto-convert, and raise if you add metres to seconds. The shared registry
    lives in `library/units.py`; `library/beam.py` uses it. Guards against

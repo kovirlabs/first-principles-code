@@ -239,6 +239,34 @@ Beam(length=Q_(2, "s"), ...)     # raises ValueError - a time is not a length
 All quantities must come from the **one shared registry** in
 `library/units.py` (Pint cannot combine quantities from different registries).
 
+## Simulation & data fitting (SciPy)
+
+Two SciPy workhorses show up where formulas run out:
+
+- **`solve_ivp`** integrates systems that have no closed-form solution.
+  `Dynamics.simulate_projectile_drag(...)` flies a projectile *with* air drag
+  (and stops itself at ground impact using a solver *event*);
+  `Modal.simulate_free_vibration(...)` rings down a spring-mass-damper.
+- **`curve_fit`** does the inverse — recover parameters *from* data.
+  `Modal.fit_damped_response(time, displacement)` fits a decaying sinusoid to
+  measured vibration and returns the natural frequency and damping ratio.
+
+```python
+from library.modal import Modal
+modal = Modal()
+
+# Simulate a known oscillator...
+t, x = modal.simulate_free_vibration(
+    mass=2.0, stiffness=800.0, damping=8.0,
+    initial_displacement=0.01, duration=5.0,
+)
+# ...then fit the response and recover the inputs (~3.18 Hz, zeta ~0.10).
+modal.fit_damped_response(time=t, displacement=x, guess_frequency_hz=3.0)
+```
+
+That simulate-then-fit round-trip is checked in the test suite: the fit must
+return the parameters the simulation started with.
+
 ## Tests
 
 The library methods are pure functions with known textbook answers, which makes

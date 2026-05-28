@@ -4,11 +4,17 @@ Vibration analysis predicts how structures and machines oscillate. These
 helpers cover the single-degree-of-freedom (SDOF) spring-mass-damper - the
 building block of all vibration theory - plus a multi-DOF eigenvalue solver
 that finds natural frequencies and mode shapes using numpy's linear algebra.
+
+It also pairs two SciPy workhorses: ``solve_ivp`` to SIMULATE a damped
+oscillator's ring-down, and ``curve_fit`` to do the inverse - recover the
+natural frequency and damping ratio FROM measured response data.
 """
 
 import math
 
 import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.optimize import curve_fit
 
 
 class Modal:
@@ -82,3 +88,84 @@ class Modal:
         # Sort modes from lowest to highest frequency for a tidy result.
         order = np.argsort(frequencies_hz)
         return frequencies_hz[order], eigenvectors[:, order]
+
+    def simulate_free_vibration(
+        self, *, mass, stiffness, damping, initial_displacement,
+        initial_velocity=0.0, duration, num_points=500,
+    ):
+        """Simulate the free ring-down of an SDOF spring-mass-damper.
+
+        Integrates  m*x'' + c*x' + k*x = 0  with ``scipy.integrate.solve_ivp``.
+        We rewrite the second-order equation as two first-order ones using the
+        state [x, v] (position and velocity), which is the standard trick for
+        feeding any ODE to a numerical solver.
+
+        :param mass: mass m [kg]
+        :param stiffness: stiffness k [N/m]
+        :param damping: damping coefficient c [N*s/m]
+        :param initial_displacement: starting position x(0) [m]
+        :param initial_velocity: starting velocity x'(0) [m/s], defaults to 0
+        :param duration: how long to simulate [s]
+        :param num_points: number of evenly spaced output samples
+        :returns: tuple of numpy arrays (time [s], displacement [m])
+        """
+        def equations_of_motion(t, state):
+            """d/dt of [x, v] for  x' = v,  v' = -(c*v + k*x)/m."""
+            x, v = state
+            acceleration = -(damping * v + stiffness * x) / mass
+            return [v, acceleration]
+
+        # Ask the solver to report the answer at these evenly spaced times.
+        time = np.linspace(0.0, duration, num_points)
+        solution = solve_ivp(
+            equations_of_motion,
+            t_span=(0.0, duration),
+            y0=[initial_displacement, initial_velocity],
+            t_eval=time,
+        )
+        # Row 0 of solution.y is displacement; row 1 is velocity.
+        return solution.t, solution.y[0]
+
+    def fit_damped_response(self, *, time, displacement, guess_frequency_hz=1.0):
+        """Recover natural frequency and damping ratio from measured ring-down.
+
+        Given (time, displacement) samples of a decaying oscillation - say from
+        an accelerometer - fit the underdamped free-vibration model
+
+            x(t) = A * exp(-zeta*omega_n*t) * cos(omega_d*t + phi)
+
+        where omega_d = omega_n*sqrt(1 - zeta^2). ``scipy.optimize.curve_fit``
+        adjusts the four parameters (A, zeta, omega_n, phi) to best match the
+        data. This is the inverse of :meth:`simulate_free_vibration`, so feeding
+        it that method's output should return the parameters you started with.
+
+        :param time: sample times [s] (1-D array-like)
+        :param displacement: measured displacement at each time [m]
+        :param guess_frequency_hz: rough starting guess for the frequency [Hz],
+            which helps curve_fit converge
+        :returns: dict with ``amplitude``, ``damping_ratio``, ``natural_frequency_hz``
+        """
+        time = np.asarray(time, dtype=float)
+        displacement = np.asarray(displacement, dtype=float)
+
+        def model(t, amplitude, zeta, omega_n, phase):
+            omega_d = omega_n * np.sqrt(1 - zeta ** 2)
+            return amplitude * np.exp(-zeta * omega_n * t) * np.cos(omega_d * t + phase)
+
+        # A good initial guess (p0) is what makes nonlinear fitting converge.
+        initial_guess = [
+            float(np.max(np.abs(displacement))),   # amplitude
+            0.05,                                   # lightly damped
+            2 * math.pi * guess_frequency_hz,       # angular frequency
+            0.0,                                    # phase
+        ]
+        params, _covariance = curve_fit(model, time, displacement, p0=initial_guess)
+        amplitude, zeta, omega_n, _phase = params
+
+        # The fit can return negative amplitude/zeta/omega that describe the same
+        # curve; take magnitudes so the reported physics is unambiguous.
+        return {
+            "amplitude": abs(amplitude),
+            "damping_ratio": abs(zeta),
+            "natural_frequency_hz": abs(omega_n) / (2 * math.pi),
+        }

@@ -62,3 +62,18 @@ def test_newtons_second_law_and_energy():
     assert dyn.kinetic_energy(mass=2.0, velocity=3.0) == pytest.approx(9.0)
     assert dyn.momentum(mass=2.0, velocity=3.0) == pytest.approx(6.0)
     assert dyn.centripetal_acceleration(speed=10.0, radius=2.0) == pytest.approx(50.0)
+
+
+def test_projectile_drag_lands_and_falls_short_of_vacuum():
+    """solve_ivp: air drag must shorten the range and the run ends at impact."""
+    time, x, y = dyn.simulate_projectile_drag(
+        speed=40.0, angle_deg=45.0, mass=0.145,
+        drag_coefficient=0.3, frontal_area=0.0042,
+    )
+    # The three arrays describe the same trajectory, so they share a length.
+    assert time.shape == x.shape == y.shape
+    # The ground-impact event stops integration with the projectile back at y=0.
+    assert y[-1] == pytest.approx(0.0, abs=1e-6)
+    # Drag always reduces range versus the drag-free closed-form result.
+    vacuum_range = dyn.projectile_range(speed=40.0, angle_deg=45.0)
+    assert 0.0 < x[-1] < vacuum_range

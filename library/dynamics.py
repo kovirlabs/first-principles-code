@@ -2,7 +2,9 @@
 
 Dynamics is the study of motion and the forces that cause it. This class
 collects the everyday formulas an engineer reaches for: kinematic equations,
-projectile motion, Newton's second law, and momentum/energy relations.
+projectile motion, Newton's second law, and momentum/energy relations. It also
+includes a ``solve_ivp`` example - projectile flight WITH air drag, which has
+no closed-form solution and so must be integrated numerically.
 
 Every method takes keyword-only arguments (note the leading ``*``) so that
 calls are self-documenting, and every method returns a plain number or tuple so
@@ -10,6 +12,9 @@ results compose easily with numpy and scipy.
 """
 
 import math
+
+import numpy as np
+from scipy.integrate import solve_ivp
 
 
 class Dynamics:
@@ -127,3 +132,67 @@ class Dynamics:
         :returns: centripetal acceleration [m/s^2]
         """
         return speed ** 2 / radius
+
+    def simulate_projectile_drag(
+        self, *, speed, angle_deg, mass, drag_coefficient, frontal_area,
+        air_density=1.225, gravity=GRAVITY, max_time=60.0,
+    ):
+        """Simulate 2-D projectile flight WITH quadratic air drag.
+
+        Without drag, ``projectile_range`` has a tidy formula. Add air
+        resistance - drag force = 1/2 * rho * Cd * A * v^2 opposing the motion -
+        and the equations couple the x and y motion in a way no formula solves.
+        This is exactly what ``scipy.integrate.solve_ivp`` is for: give it the
+        derivatives, the start state, and a time span, and it marches the system
+        forward adaptively.
+
+        We also attach an *event* so the integration stops the instant the
+        projectile returns to the ground (y crosses zero going down).
+
+        :param speed: launch speed [m/s]
+        :param angle_deg: launch angle above horizontal [degrees]
+        :param mass: projectile mass [kg]
+        :param drag_coefficient: dimensionless drag coefficient Cd [-]
+        :param frontal_area: cross-sectional area facing the flow [m^2]
+        :param air_density: air density rho [kg/m^3], defaults to sea level
+        :param gravity: gravitational acceleration [m/s^2]
+        :param max_time: safety cap on simulated time [s]
+        :returns: tuple of numpy arrays (time [s], x [m], y [m]) ending at impact
+        """
+        # Resolve the launch velocity into horizontal and vertical parts.
+        angle_rad = math.radians(angle_deg)
+        vx0 = speed * math.cos(angle_rad)
+        vy0 = speed * math.sin(angle_rad)
+
+        # Lump the drag constants together: F_drag = drag_k * v^2.
+        drag_k = 0.5 * air_density * drag_coefficient * frontal_area
+
+        def equations_of_motion(t, state):
+            """Return d/dt of [x, y, vx, vy] - what solve_ivp integrates."""
+            x, y, vx, vy = state
+            speed_now = math.hypot(vx, vy)
+            # Drag acceleration opposes the velocity vector; gravity pulls -y.
+            ax = -(drag_k / mass) * speed_now * vx
+            ay = -gravity - (drag_k / mass) * speed_now * vy
+            return [vx, vy, ax, ay]
+
+        def hit_ground(t, state):
+            """Event function: zero when the height y returns to ground level."""
+            return state[1]
+
+        # terminal=True stops the solver at the event; direction=-1 means only
+        # trigger when y is decreasing (landing, not launch).
+        hit_ground.terminal = True
+        hit_ground.direction = -1
+
+        solution = solve_ivp(
+            equations_of_motion,
+            t_span=(0.0, max_time),
+            y0=[0.0, 0.0, vx0, vy0],
+            events=hit_ground,
+            max_step=0.01,          # small steps keep the trajectory smooth
+            dense_output=False,
+        )
+
+        # solution.y rows are [x, y, vx, vy]; return the parts a caller wants.
+        return solution.t, solution.y[0], solution.y[1]

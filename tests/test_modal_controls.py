@@ -30,6 +30,32 @@ def test_damping_ratio_is_dimensionless_fraction():
     assert 0.0 < zeta < 1.0  # an underdamped system
 
 
+def test_simulate_then_fit_recovers_parameters():
+    """solve_ivp + curve_fit round-trip: fit the simulation, get the inputs back.
+
+    Simulate a known damped oscillator, then fit the response. The recovered
+    natural frequency and damping ratio should match what we put in - the
+    strongest possible check that both numerical methods are wired up right.
+    """
+    mass, stiffness, damping = 2.0, 800.0, 8.0
+    _, true_f_n = modal.natural_frequency(stiffness=stiffness, mass=mass)
+    true_zeta = modal.damping_ratio(damping=damping, mass=mass, stiffness=stiffness)
+
+    time, displacement = modal.simulate_free_vibration(
+        mass=mass, stiffness=stiffness, damping=damping,
+        initial_displacement=0.01, duration=5.0, num_points=600,
+    )
+    # The response should start at the release point and decay toward zero.
+    assert displacement[0] == pytest.approx(0.01)
+    assert abs(displacement[-1]) < abs(displacement[0])
+
+    fit = modal.fit_damped_response(
+        time=time, displacement=displacement, guess_frequency_hz=3.0,
+    )
+    assert fit["natural_frequency_hz"] == pytest.approx(true_f_n, rel=1e-2)
+    assert fit["damping_ratio"] == pytest.approx(true_zeta, rel=5e-2)
+
+
 def test_mode_shapes_returns_sorted_frequencies():
     """A 2-DOF system yields 2 natural frequencies, lowest first."""
     frequencies, shapes = modal.mode_shapes(
