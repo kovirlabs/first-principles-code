@@ -74,3 +74,67 @@ class Mechatronics:
         :returns: torque [N*m]
         """
         return inertia * angular_acceleration
+
+    def calculate_inertia_ratio(self, *, j_motor, mass, pitch, teeth_motor_pulley, teeth_screw_pulley, j_screw, j_pulley_motor, j_pulley_screw):
+        """
+        Calculates the inertia ratio of a servomotor driving a ballscrew via a timing belt.
+
+        :param j_motor: motor rotor inertia [kg*m^2]
+        :param mass: linear mass [kg]
+        :param pitch: ballscrew pitch [m/rev]
+        :param teeth_motor_pulley: number of teeth on the motor pulley
+        :param teeth_screw_pulley: number of teeth on the ballscrew pulley
+        :param j_screw: ballscrew inertia [kg*m^2]
+        :param j_pulley_motor: motor pulley inertia [kg*m^2]
+        :param j_pulley_screw: ballscrew pulley inertia [kg*m^2]
+        :returns: dictionary containing inertia ratio, total load inertia, and reduction ratio
+        """
+        # 1. Calculate the mechanical reduction ratio of the timing belt
+        reduction_ratio = teeth_screw_pulley / teeth_motor_pulley
+
+        # 2. Calculate the inertia of the linear mass reflected to the ballscrew shaft
+        j_mass = mass * (pitch / (2 * math.pi)) ** 2
+
+        # 3. Sum the inertias on the ballscrew shaft
+        j_ballscrew_total = j_pulley_screw + j_screw + j_mass
+
+        # 4. Reflect the ballscrew shaft inertia through the timing belt to the motor
+        j_reflected_to_motor = self.reflected_inertia(
+            load_inertia=j_ballscrew_total, gear_ratio=reduction_ratio
+        )
+
+        # 5. Add the motor pulley inertia to get the total load inertia
+        j_load_total = j_pulley_motor + j_reflected_to_motor
+
+        # 6. Calculate the inertia ratio
+        inertia_ratio = j_load_total / j_motor
+
+        return {
+            "inertia_ratio": inertia_ratio,
+            "j_load_total": j_load_total,
+            "reduction_ratio": reduction_ratio,
+        }
+
+    def _calculate_acceleration_torque(self, *, j_total, j_motor, linear_acceleration, pitch, reduction_ratio):
+        """
+        Uses linear acceleration to find the required motor acceleration torque.
+
+        :param j_total: total reflected load inertia [kg*m^2]
+        :param j_motor: motor rotor inertia [kg*m^2]
+        :param linear_acceleration: linear acceleration [m/s^2]
+        :param pitch: ballscrew pitch [m/rev]
+        :param reduction_ratio: mechanical reduction ratio
+        :returns: required acceleration torque [N*m]
+        """
+        total_system_inertia = j_total + j_motor
+
+        # Convert linear acceleration to angular acceleration at the ballscrew (rad/s^2)
+        alpha_screw = linear_acceleration * (2 * math.pi / pitch)
+
+        # Convert angular acceleration at the ballscrew to the motor shaft
+        alpha_motor = alpha_screw * reduction_ratio
+
+        # Calculate Required Torque (T = J * alpha)
+        return self.acceleration_torque(
+            inertia=total_system_inertia, angular_acceleration=alpha_motor
+        )

@@ -76,3 +76,48 @@ def test_motor_power_from_torque_and_speed():
     assert mechatronics.motor_power(
         torque=2.0, speed_rpm=3000.0,
     ) == pytest.approx(expected)
+
+
+def test_calculate_inertia_ratio():
+    """Test inertia ratio calculation with example values."""
+    results = mechatronics.calculate_inertia_ratio(
+        j_motor=0.00005,
+        mass=50.0,
+        pitch=0.01,
+        teeth_motor_pulley=20,
+        teeth_screw_pulley=40,
+        j_screw=0.0001,
+        j_pulley_motor=0.00001,
+        j_pulley_screw=0.00004,
+    )
+    assert results["reduction_ratio"] == pytest.approx(2.0)
+    # j_mass = 50.0 * (0.01 / (2 * math.pi))**2 = 0.000126651...
+    # j_ballscrew_total = 0.00004 + 0.0001 + 0.000126651 = 0.000266651...
+    # j_reflected_to_motor = 0.000266651 / 4.0 = 0.000066662...
+    # j_load_total = 0.00001 + 0.000066662 = 0.000076662...
+    assert results["j_load_total"] == pytest.approx(0.0000766628, rel=1e-3)
+    # inertia_ratio = 0.000076662 / 0.00005 = 1.5332...
+    assert results["inertia_ratio"] == pytest.approx(1.53325, rel=1e-3)
+
+
+def test__calculate_acceleration_torque():
+    """Test required motor acceleration torque calculation with example values."""
+    # Reusing the total load inertia from the previous test result
+    j_load_total = 0.0000766627
+    j_motor = 0.00005
+    target_acceleration_m_s2 = 2.0
+    reduction_ratio = 2.0
+    pitch = 0.01
+
+    req_torque = mechatronics._calculate_acceleration_torque(
+        j_total=j_load_total,
+        j_motor=j_motor,
+        linear_acceleration=target_acceleration_m_s2,
+        pitch=pitch,
+        reduction_ratio=reduction_ratio,
+    )
+    # Total system inertia = 0.0000766627 + 0.00005 = 0.0001266627
+    # alpha_screw = 2.0 * (2 * math.pi / 0.01) = 1256.637...
+    # alpha_motor = 1256.637... * 2.0 = 2513.274...
+    # req_torque = 0.0001266627 * 2513.274... = 0.3183...
+    assert req_torque == pytest.approx(0.318338, rel=1e-3)
