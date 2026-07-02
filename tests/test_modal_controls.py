@@ -33,6 +33,34 @@ def test_damping_ratio_is_dimensionless_fraction():
     assert 0.0 < zeta < 1.0  # an underdamped system
 
 
+def test_damped_natural_frequency():
+    """Test damped_natural_frequency with mocked dependencies for various damping states."""
+    from unittest.mock import patch
+
+    test_modal = Modal()
+
+    with patch.object(test_modal, "natural_frequency", return_value=(10.0, None)) as mock_nf, \
+         patch.object(test_modal, "damping_ratio") as mock_dr:
+
+        # Underdamped case: zeta = 0.5
+        mock_dr.return_value = 0.5
+        omega_d = test_modal.damped_natural_frequency(stiffness=1000.0, mass=10.0, damping=5.0)
+        assert omega_d == pytest.approx(10.0 * math.sqrt(1 - 0.5**2))
+        mock_nf.assert_called_with(stiffness=1000.0, mass=10.0)
+        mock_dr.assert_called_with(damping=5.0, mass=10.0, stiffness=1000.0)
+
+        # Undamped case: zeta = 0.0
+        mock_dr.return_value = 0.0
+        omega_d = test_modal.damped_natural_frequency(stiffness=1000.0, mass=10.0, damping=0.0)
+        assert omega_d == pytest.approx(10.0)
+
+        # Overdamped case: zeta > 1.0
+        mock_dr.return_value = 1.5
+        with pytest.raises(ValueError):
+            # math.sqrt(1 - 1.5**2) will raise a ValueError for math domain error
+            test_modal.damped_natural_frequency(stiffness=1000.0, mass=10.0, damping=15.0)
+
+
 def test_simulate_then_fit_recovers_parameters():
     """solve_ivp + curve_fit round-trip: fit the simulation, get the inputs back.
 
