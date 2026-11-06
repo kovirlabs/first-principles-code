@@ -15,8 +15,8 @@ You get:
   time-varying acceleration).
 - **`library/`** — one well-documented class per engineering domain
   (dynamics, statics, thermo, fluids, materials, gears, electrical,
-  mechatronics, modal/vibration, controls) plus a `Utility` class for files
-  and dialogs.
+  mechatronics, modal/vibration, controls), a set of radiology /
+  medical-imaging classes, and a `Utility` class for files and dialogs.
 
 Every method uses keyword-only arguments and carries a docstring, so the code
 itself doubles as a reference you can read and learn from.
@@ -269,6 +269,68 @@ modal.fit_damped_response(time=t, displacement=x, guess_frequency_hz=3.0)
 That simulate-then-fit round-trip is checked in the test suite: the fit must
 return the parameters the simulation started with.
 
+## Radiology & medical imaging
+
+Six classes cover the physics and image handling a radiology student
+(radiologic technologist, resident, or medical physics student) works with
+every day. Run the guided tour with `uv run radiology_demo.py`. It prints one
+worked example per modality and saves `radiology.png`, which shows a real CT
+slice in abdomen, lung, and bone windows.
+
+| Class | Module | What it covers |
+| --- | --- | --- |
+| `Radiation` | `library/radiation.py` | Inverse square law, attenuation (mu, HVL, TVL, shielding), photon energy, radioactive and effective half-life, equivalent/effective dose with ICRP 103 weighting factors |
+| `Radiography` | `library/radiography.py` | mAs, 15% rule, exposure-maintenance (SID) formula, grid conversion, heat units, magnification, geometric unsharpness, detector Nyquist limit, deviation index |
+| `CT` | `library/ct.py` | Hounsfield units, DICOM rescale, window width/level with presets, rough HU tissue lookup, DLP and effective dose estimate |
+| `MRI` | `library/mri.py` | Larmor frequency, T1 recovery, T2 decay, spin-echo signal, T1/T2/PD weighting from TR/TE |
+| `Ultrasound` | `library/ultrasound.py` | Wavelength, echo depth, acoustic impedance and reflection, attenuation, axial resolution, PRF depth limit, Doppler shift and velocity |
+| `Dicom` | `library/dicom.py` | Read DICOM with pydicom, summarize technical tags, pixels in HU, pixel spacing, basic de-identification, PNG export |
+
+```python
+from pydicom.data import get_testdata_file   # sample images, no patient data
+from library import CT, Dicom, Radiography, Radiation
+
+radiation = Radiation()
+radiation.effective_dose(organ_equivalent_doses={"thyroid": 10.0})   # -> 0.4 mSv
+
+Radiography().exposure_maintenance_mas(original_mas=10, original_sid=100, new_sid=180)  # 32.4
+
+dicom, ct = Dicom(), CT()
+ds = dicom.read(path=get_testdata_file("CT_small.dcm"))
+hu = dicom.pixel_array_in_units(dataset=ds)          # stored values -> Hounsfield units
+lung = ct.apply_window(hounsfield=hu, preset="lung") # whole slice windowed in one call
+safe = dicom.anonymize(dataset=ds)                   # blank PHI before sharing
+```
+
+> **Teaching use only.** These are textbook calculations for learning. They
+> are not validated for clinical decisions, patient dosimetry, or shielding
+> design. Use your department's protocols and a qualified medical physicist
+> for those. `Dicom.anonymize` removes common direct identifiers only, which
+> is *not* full de-identification under DICOM PS3.15 or HIPAA.
+
+### Python packages for medical imaging
+
+`pydicom` is already installed. Add the others as you need them with `uv add <package>`.
+
+| Package | Use it for |
+| --- | --- |
+| [pydicom](https://pydicom.github.io/) | Read, edit, and write DICOM files (installed) |
+| [SimpleITK](https://simpleitk.org/) | 3-D volumes, resampling, registration, segmentation; reads whole DICOM series |
+| [nibabel](https://nipy.org/nibabel/) | NIfTI and other neuroimaging formats (research MRI) |
+| [scikit-image](https://scikit-image.org/) | Filtering, thresholding, edge detection, Radon transform / CT reconstruction demos |
+| [highdicom](https://highdicom.readthedocs.io/) | Create DICOM segmentations, structured reports, and annotations |
+| [pynetdicom](https://pydicom.github.io/pynetdicom/) | Talk to a PACS (C-FIND / C-MOVE / C-STORE) |
+| [MONAI](https://monai.io/) | Deep learning for medical imaging (built on PyTorch) |
+| [TotalSegmentator](https://github.com/wasserth/TotalSegmentator) | Pretrained automatic segmentation of 100+ structures on CT/MR |
+| [pyradiomics](https://pyradiomics.readthedocs.io/) | Extract quantitative radiomic features from images + masks |
+
+**Learning resources:** [Radiopaedia](https://radiopaedia.org/) (cases and
+physics articles), [pydicom user guide](https://pydicom.github.io/pydicom/stable/tutorials/index.html),
+[NIST XCOM attenuation data](https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html),
+[ICRP Publication 103](https://www.icrp.org/publication.asp?id=ICRP%20Publication%20103),
+[The Cancer Imaging Archive](https://www.cancerimagingarchive.net/) (free
+de-identified datasets).
+
 ## Tests
 
 The library methods are pure functions with known textbook answers, which makes
@@ -342,6 +404,7 @@ Add any of them with `uv add <package>`.
 first-principles-code/
 ├── main.py              # displacement demo (start here)
 ├── gui.py               # MATLAB-style console GUI (uv run gui.py)
+├── radiology_demo.py    # medical-imaging tour (uv run radiology_demo.py)
 ├── library/             # one class per engineering domain
 │   ├── __init__.py      # re-exports every class
 │   ├── units.py         # shared Pint unit registry (ureg, Q_)
@@ -356,7 +419,13 @@ first-principles-code/
 │   ├── gear.py
 │   ├── electrical.py
 │   ├── mechatronics.py
-│   └── controls.py
+│   ├── controls.py
+│   ├── radiation.py     # radiology: physics, decay, dose
+│   ├── radiography.py   # radiology: x-ray technique & geometry
+│   ├── ct.py            # radiology: Hounsfield units & windowing
+│   ├── mri.py           # radiology: relaxation & contrast
+│   ├── ultrasound.py    # radiology: pulse-echo & Doppler
+│   └── dicom.py         # radiology: DICOM I/O with pydicom
 ├── tests/               # pytest suite (uv run pytest)
 ├── pyproject.toml       # project metadata & dependencies
 ├── SPEC.md              # full project design spec

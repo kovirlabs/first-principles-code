@@ -38,6 +38,7 @@ import numpy as np
 from library import (
     Dynamics, Statics, Modal, Thermo, Fluids, Material,
     Gear, Electrical, Mechatronics, Controls, Utility,
+    Radiation, Radiography, CT, MRI, Ultrasound, Dicom,
 )
 
 
@@ -66,6 +67,13 @@ class Session:
             "electrical": Electrical(),
             "mechatronics": Mechatronics(),
             "controls": Controls(),
+            # Radiology / medical imaging.
+            "radiation": Radiation(),
+            "radiography": Radiography(),
+            "ct": CT(),
+            "mri": MRI(),
+            "ultrasound": Ultrasound(),
+            "dicom": Dicom(),
         }
         # Recorded (label, command, result-as-text) for the workspace + export.
         self.records = []

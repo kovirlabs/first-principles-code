@@ -34,6 +34,14 @@ from library.mechatronics import Mechatronics
 from library.controls import Controls
 from library.utility import Utility
 
+# Medical imaging / radiology classes.
+from library.radiation import Radiation
+from library.radiography import Radiography
+from library.ct import CT
+from library.mri import MRI
+from library.ultrasound import Ultrasound
+from library.dicom import Dicom
+
 # Unit-aware modelling: the shared Pint registry and the Beam dataclass.
 from library.units import ureg, Q_
 from library.beam import Beam
@@ -50,6 +58,12 @@ __all__ = [
     "Mechatronics",
     "Controls",
     "Utility",
+    "Radiation",
+    "Radiography",
+    "CT",
+    "MRI",
+    "Ultrasound",
+    "Dicom",
     "Beam",
     "ureg",
     "Q_",
