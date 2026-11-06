@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Evan Gress
+name: New domain or method request
+description: Propose a new engineering class or new calculations for an existing one.
+labels: [enhancement, new-domain]
+body:
+  - type: input
+    id: domain
+    attributes:
+      label: Domain or class
+      description: A new domain (e.g. "Acoustics") or an existing class (e.g. "Fluids").
+    validations:
+      required: true
+  - type: textarea
+    id: methods
+    attributes:
+      label: Calculations to include
+      description: One line per method, with the formula if you know it.
+      placeholder: |
+        - sound_pressure_level(pressure) -> dB, Lp = 20 log10(p / 20 uPa)
+        - add_decibels(levels) -> combined level
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Textbooks, standards, or papers the formulas come from, so they can be verified.
+  - type: textarea
+    id: who
+    attributes:
+      label: Who would use this?
+      description: The kind of engineer or student, and the problem it helps them solve.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to implement this myself (see the checklist in CONTRIBUTOR.md).

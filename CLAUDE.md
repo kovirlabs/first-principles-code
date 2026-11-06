@@ -14,10 +14,10 @@ The original design lives in [SPEC.md](SPEC.md); the improvement backlog lives i
 ## Current state
 
 - `main.py` — displacement demo (closed form, `scipy` integration, library call) that prints results and saves a plot.
-- `fpc/` — the installable package (import name `fpc`, distribution name `first-principles-code`). One class per engineering domain (Dynamics, Statics, Modal, Thermo, Fluids, Material, Gear, Electrical, Mechatronics, Controls, Utility, Solvers, plus the radiology set Radiation, Radiography, CT, MRI, Ultrasound, Dicom), the shared Pint registry in `fpc/units.py`, and the unit-aware `Beam` dataclass.
+- `fpc/` — the installable package (import name `fpc`, distribution name `first-principles-code`). One class per engineering domain (Dynamics, Statics, Modal, Thermo, Fluids, Material, Gear, Electrical, Mechatronics, Controls, Utility, Design, Properties, plus the radiology set Radiation, Radiography, CT, MRI, Ultrasound, Dicom), the shared Pint registry in `fpc/units.py`, and the unit-aware `Beam` dataclass.
 - `gui.py` — tkinter MATLAB-style console; the `Session` class is GUI-free and tested.
 - `tests/` — pytest suite, run in CI (`.github/workflows/tests.yml`).
-- `examples/` — one self-contained worked problem per script; `templates/` — copy-and-adapt starting scripts; `notebooks/` — Jupyter notebooks; `data/` — cited reference tables (CSV/JSON); `docs/` — mkdocs site sources and guides.
+- `examples/` — one self-contained worked problem per script; `templates/` — copy-and-adapt starting scripts; `notebooks/` — Jupyter notebooks; `fpc/data/` — cited reference tables (CSV); `docs/` — mkdocs site sources and guides.
 - `PACKAGES.md` — curated package list by engineering field.
 
 ## Tooling & commands
