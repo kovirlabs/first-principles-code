@@ -28,11 +28,15 @@ from fpc import Fluids, Properties, Design
 props = Properties()
 mu = props.water_liquid(temperature_c=37, property="dynamic_viscosity_pa_s")
 
-Fluids().colebrook_friction_factor(reynolds=1e5, relative_roughness=1e-4)   # 0.0185
+Fluids().colebrook_friction_factor(reynolds=1e5, relative_roughness=1e-4)  # 0.0185
 
 Design().rectangular_beam_height_for_deflection(
-    load=5000, length=2.0, modulus=200e9, width=0.05, max_deflection=0.001,
-)                                                                            # 0.100 m
+    load=5000,
+    length=2.0,
+    modulus=200e9,
+    width=0.05,
+    max_deflection=0.001,
+)  # 0.100 m
 ```
 
 ## Where to go next

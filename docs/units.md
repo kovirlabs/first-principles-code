@@ -35,7 +35,7 @@ use each.
 from fpc import Fluids, Q_
 
 # Inputs as they appear on the drawing / datasheet:
-diameter = Q_(4.026, "inch")         # 4" Schedule 40 inner diameter
+diameter = Q_(4.026, "inch")  # 4" Schedule 40 inner diameter
 flow = Q_(190, "gallon/minute")
 
 # Boundary: convert to SI floats once, then use the fast float API.
@@ -44,7 +44,8 @@ result = Fluids().pipe_flow(
     diameter=diameter.to("m").magnitude,
     length=Q_(400, "ft").to("m").magnitude,
     roughness=Q_(0.0018, "inch").to("m").magnitude,
-    density=998.2, viscosity=1.0e-3,
+    density=998.2,
+    viscosity=1.0e-3,
 )
 
 # Boundary out: attach units again and report in the reader's units.

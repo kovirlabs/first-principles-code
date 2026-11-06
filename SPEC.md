@@ -59,17 +59,19 @@ engineer move from "a single formula" to "a real workflow they can compute,
 visualize, and trust." Listed roughly in order of payoff. Items marked
 **(done)** are already in the project.
 
-1. **NumPy array thinking / vectorization** — operating on whole arrays instead
+1. **NumPy array thinking / vectorization (done)** — see
+   `examples/vectorization.py`; operating on whole arrays instead
    of looping element by element; broadcasting and boolean masking
    (`stress[stress > yield_strength]`). The biggest shift coming from MATLAB.
 2. **Plotting with matplotlib (done)** — turning result arrays into figures
    (`main.py` plots position/velocity/acceleration vs time and saves a PNG).
    The figure is usually the real engineering deliverable.
-3. **The wider SciPy toolbox (partly done)** — general ODE simulation with
+3. **The wider SciPy toolbox (done)** — general ODE simulation with
    `integrate.solve_ivp` (`Dynamics.simulate_projectile_drag`,
    `Modal.simulate_free_vibration`) and curve fitting with `optimize.curve_fit`
-   (`Modal.fit_damped_response`) are implemented. Still open: root finding
-   (`optimize.brentq`, `fsolve`) and interpolation (`scipy.interpolate`).
+   (`Modal.fit_damped_response`), root finding (`Fluids.colebrook_friction_factor`,
+   `Design.rectangular_beam_height_for_deflection`), constrained optimization
+   (`Design.lightest_rectangular_beam`), and interpolation (`Properties`).
 4. **Physical units with Pint (done)** — quantities that carry units,
    auto-convert, and raise if you add metres to seconds. The shared registry
    lives in `fpc/units.py`; `fpc/beam.py` uses it. Guards against
@@ -81,7 +83,8 @@ visualize, and trust." Listed roughly in order of payoff. Items marked
    bad inputs (wrong units, negative dimensions); see `Beam.__post_init__`.
 7. **Testing with pytest (done)** — pure-function methods checked against known
    textbook answers (`tests/`), so the library can be refactored fearlessly.
-8. **Data handling with pandas** — reading sensor logs / material-property
+8. **Data handling with pandas (done)** — `Properties`, `Utility.read_table`,
+   and `examples/sensor_log_analysis.py`; reading sensor logs / material-property
    tables from CSV/Excel, filtering, grouping, and exporting results.
 
 Smaller but useful: `@property` / `@staticmethod` for richer class design,

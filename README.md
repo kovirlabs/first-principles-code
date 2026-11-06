@@ -13,10 +13,21 @@ You get:
   acceleration and velocity three different ways (closed-form, numerical
   integration of constant acceleration, and numerical integration of a
   time-varying acceleration).
-- **`fpc/`** — one well-documented class per engineering domain
-  (dynamics, statics, thermo, fluids, materials, gears, electrical,
-  mechatronics, modal/vibration, controls), a set of radiology /
-  medical-imaging classes, and a `Utility` class for files and dialogs.
+- **`fpc/`** — an installable package with one well-documented class per
+  engineering domain (dynamics, statics, thermo, fluids, materials, gears,
+  electrical, mechatronics, modal/vibration, controls), a set of radiology /
+  medical-imaging classes, `Design` (root finding and optimization),
+  `Properties` (cited reference tables with interpolation), and a `Utility`
+  class for files, tables, and dialogs.
+- **[`examples/`](examples/)** — one script per realistic problem (pump
+  sizing, beam selection, PID tuning, ...), each going from question to answer.
+- **[`templates/engineering_script.py`](templates/engineering_script.py)** —
+  a commented skeleton to copy for your own calculation.
+- **[`notebooks/`](notebooks/)** — Jupyter notebooks that walk through the library.
+- **Guides:** [from calculation to tool](docs/building-tools.md) (script ->
+  CLI -> GUI -> web app -> installed command) and
+  [units: floats or Pint?](docs/units.md).
+- **[`PACKAGES.md`](PACKAGES.md)** — which Python packages to use, by engineering field.
 
 Every method uses keyword-only arguments and carries a docstring, so the code
 itself doubles as a reference you can read and learn from.
@@ -272,12 +283,60 @@ modal.fit_damped_response(time=t, displacement=x, guess_frequency_hz=3.0)
 That simulate-then-fit round-trip is checked in the test suite: the fit must
 return the parameters the simulation started with.
 
+## Design, reference data & tables
+
+Analysis asks "how much does this beam deflect?"; design asks "what beam
+deflects no more than 5 mm?". These pieces answer design questions:
+
+```python
+from fpc import Design, Fluids, Properties, Utility
+
+# Root finding (scipy.optimize.brentq): solve equations with no algebraic answer.
+Fluids().colebrook_friction_factor(reynolds=1e5, relative_roughness=1e-4)  # 0.0185
+Design().rectangular_beam_height_for_deflection(
+    load=5000,
+    length=2.0,
+    modulus=200e9,
+    width=0.05,
+    max_deflection=0.001,
+)  # 0.100 m
+
+# Constrained optimization (scipy.optimize.minimize, SLSQP): lightest beam
+# that satisfies stress, deflection, and aspect-ratio limits.
+Design().lightest_rectangular_beam(
+    load=5000,
+    length=2.0,
+    modulus=200e9,
+    density=7850,
+    allowable_stress=150e6,
+    max_deflection=0.005,
+)  # {'width': 0.0199, 'height': 0.0795, 'mass': 24.8, 'active': ['deflection', 'aspect_ratio'], ...}
+
+# Reference tables (pandas) with interpolation; data and sources in fpc/data/.
+props = Properties()
+props.water_liquid(temperature_c=37, property="dynamic_viscosity_pa_s")  # linear
+props.water_saturation(temperature_c=93, property="pressure_kpa", method="cubic")
+props.lightest_w_shape(required_sx_in3=30)["designation"]  # 'W16x26'
+
+# Your own CSV/Excel files
+frame = Utility().read_table(file_path="test_log.xlsx")
+```
+
+[`examples/sensor_log_analysis.py`](examples/sensor_log_analysis.py) shows the
+full pandas workflow (clean, group, resample, filter, export to Excel), and
+[`examples/vectorization.py`](examples/vectorization.py) compares Python loops
+with NumPy arrays.
+
+Units: methods that take plain numbers expect **SI units** (the docstring
+says so for every parameter); use Pint at the boundaries where units are
+mixed. See [docs/units.md](docs/units.md).
+
 ## Radiology & medical imaging
 
 Six classes cover the physics and image handling a radiology student
 (radiologic technologist, resident, or medical physics student) works with
-every day. Run the guided tour with `uv run radiology_demo.py`. It prints one
-worked example per modality and saves `radiology.png`, which shows a real CT
+every day. Run the guided tour with `uv run examples/radiology_demo.py`. It prints one
+worked example per modality and saves `examples/output/radiology.png`, which shows a real CT
 slice in abdomen, lung, and bone windows.
 
 | Class | Module | What it covers |
@@ -311,21 +370,8 @@ safe = dicom.anonymize(dataset=ds)  # blank PHI before sharing
 > for those. `Dicom.anonymize` removes common direct identifiers only, which
 > is *not* full de-identification under DICOM PS3.15 or HIPAA.
 
-### Python packages for medical imaging
-
-`pydicom` is already installed. Add the others as you need them with `uv add <package>`.
-
-| Package | Use it for |
-| --- | --- |
-| [pydicom](https://pydicom.github.io/) | Read, edit, and write DICOM files (installed) |
-| [SimpleITK](https://simpleitk.org/) | 3-D volumes, resampling, registration, segmentation; reads whole DICOM series |
-| [nibabel](https://nipy.org/nibabel/) | NIfTI and other neuroimaging formats (research MRI) |
-| [scikit-image](https://scikit-image.org/) | Filtering, thresholding, edge detection, Radon transform / CT reconstruction demos |
-| [highdicom](https://highdicom.readthedocs.io/) | Create DICOM segmentations, structured reports, and annotations |
-| [pynetdicom](https://pydicom.github.io/pynetdicom/) | Talk to a PACS (C-FIND / C-MOVE / C-STORE) |
-| [MONAI](https://monai.io/) | Deep learning for medical imaging (built on PyTorch) |
-| [TotalSegmentator](https://github.com/wasserth/TotalSegmentator) | Pretrained automatic segmentation of 100+ structures on CT/MR |
-| [pyradiomics](https://pyradiomics.readthedocs.io/) | Extract quantitative radiomic features from images + masks |
+Python packages for medical imaging (SimpleITK, nibabel, MONAI, ...) are
+listed in [PACKAGES.md](PACKAGES.md#medical-imaging).
 
 **Learning resources:** [Radiopaedia](https://radiopaedia.org/) (cases and
 physics articles), [pydicom user guide](https://pydicom.github.io/pydicom/stable/tutorials/index.html),
@@ -356,21 +402,21 @@ MATLAB's figures. See `plot_motion()` in `main.py` for a worked example.
 
 ## Python packages for science, engineering & data work
 
+The ten to know first. **[PACKAGES.md](PACKAGES.md)** has the full list,
+organized by engineering field (structural, thermal/fluids, electrical,
+controls, CAD, optimization, medical imaging, tool building, performance).
+
 | Package | Use it for |
 | --- | --- |
 | [NumPy](https://numpy.org/) | Fast N-dimensional arrays and vectorised math — the foundation of everything below |
-| [SciPy](https://scipy.org/) | Integration, optimization, linear algebra, signal processing, statistics |
+| [SciPy](https://scipy.org/) | Integration, optimization, root finding, interpolation, signal processing, statistics |
 | [Matplotlib](https://matplotlib.org/) | Plotting and figures (the MATLAB-style `pyplot` interface) |
 | [pandas](https://pandas.pydata.org/) | Tabular data, time series, CSV/Excel I/O |
 | [SymPy](https://www.sympy.org/) | Symbolic math / computer algebra (a free Maple/Mathematica) |
-| [Plotly](https://plotly.com/python/) | Interactive, web-ready charts and dashboards |
-| [Seaborn](https://seaborn.pydata.org/) | Statistical plotting built on Matplotlib |
-| [scikit-learn](https://scikit-learn.org/) | Classic machine learning (regression, clustering, classification) |
-| [Jupyter](https://jupyter.org/) | Notebooks that mix code, math, plots, and prose |
 | [Pint](https://pint.readthedocs.io/) | Physical units and automatic unit conversion |
+| [Jupyter](https://jupyter.org/) | Notebooks that mix code, math, plots, and prose |
 | [CoolProp](http://www.coolprop.org/) | Thermophysical fluid properties for thermo/HVAC work |
-| [control](https://python-control.readthedocs.io/) | Control-systems design (a free Control System Toolbox) |
-| [CadQuery](https://cadquery.readthedocs.io/) | Parametric 3D CAD modelling in Python |
+| [python-control](https://python-control.readthedocs.io/) | Control-systems design (a free Control System Toolbox) |
 | [pytest](https://docs.pytest.org/) | Testing framework to verify your calculations stay correct |
 
 Add any of them with `uv add <package>`.
@@ -401,38 +447,69 @@ Add any of them with `uv add <package>`.
 
 ---
 
+## Use this library in your own project
+
+`fpc` is an installable package, so your own scripts do not have to live in
+this repository.
+
+```bash
+# In your own uv project
+uv add git+https://github.com/kovirlabs/first-principles-code
+
+# Or with pip, from a local clone (editable: your edits take effect immediately)
+pip install -e path/to/first-principles-code
+```
+
+```python
+from fpc import Fluids, Properties
+```
+
+Installing also gives you the `fpc` command
+(`fpc pipe-flow --flow-l-s 12 --diameter-mm 102.3 --length-m 120`; see
+[docs/building-tools.md](docs/building-tools.md)). To pin a version, add
+`@<tag-or-commit>` to the git URL.
+
+## Developer tooling
+
+| Command | What it does |
+| --- | --- |
+| `uv sync --all-groups` | Install everything: runtime, dev tools, notebooks, docs, apps |
+| `uv run pytest` | Tests, including running every example and notebook |
+| `uv run ruff check .` / `uv run ruff format .` | Lint / auto-format |
+| `uv run mypy` | Type-check the `fpc` package |
+| `uv run pre-commit install` | Run ruff and pytest automatically before each commit |
+| `uv run --group docs mkdocs serve` | Preview the API docs site, generated from the docstrings |
+
+CI runs all of these on every pull request; the docs site is published to
+GitHub Pages from `main`.
+
 ## Project layout
 
 ```
 first-principles-code/
 ├── main.py              # displacement demo (start here)
 ├── gui.py               # MATLAB-style console GUI (uv run gui.py)
-├── radiology_demo.py    # medical-imaging tour (uv run radiology_demo.py)
-├── fpc/             # one class per engineering domain
+├── fpc/                 # the library: one class per engineering domain
 │   ├── __init__.py      # re-exports every class
 │   ├── units.py         # shared Pint unit registry (ureg, Q_)
 │   ├── beam.py          # unit-aware Beam dataclass
-│   ├── utility.py       # JSON/CSV/file-picker helpers
-│   ├── dynamics.py
-│   ├── statics.py
-│   ├── modal.py
-│   ├── thermo.py
-│   ├── fluids.py
-│   ├── material.py
-│   ├── gear.py
-│   ├── electrical.py
-│   ├── mechatronics.py
-│   ├── controls.py
-│   ├── radiation.py     # radiology: physics, decay, dose
-│   ├── radiography.py   # radiology: x-ray technique & geometry
-│   ├── ct.py            # radiology: Hounsfield units & windowing
-│   ├── mri.py           # radiology: relaxation & contrast
-│   ├── ultrasound.py    # radiology: pulse-echo & Doppler
-│   └── dicom.py         # radiology: DICOM I/O with pydicom
+│   ├── design.py        # root finding & constrained optimization
+│   ├── properties.py    # reference-table lookups with interpolation
+│   ├── utility.py       # JSON/CSV/Excel/file-picker helpers
+│   ├── cli.py           # the `fpc` terminal command
+│   ├── data/            # cited reference tables (CSV) + sources
+│   ├── dynamics.py, statics.py, modal.py, thermo.py, fluids.py,
+│   ├── material.py, gear.py, electrical.py, mechatronics.py, controls.py
+│   └── radiation.py, radiography.py, ct.py, mri.py, ultrasound.py, dicom.py
+├── examples/            # worked problems, one script each (+ tools/ ladder)
+├── templates/           # copy-and-adapt starting script
+├── notebooks/           # Jupyter notebooks
+├── docs/                # guides + API docs site sources (mkdocs.yml)
 ├── tests/               # pytest suite (uv run pytest)
-├── pyproject.toml       # project metadata & dependencies
-├── SPEC.md              # full project design spec
-├── ROADMAP.md           # planned improvements (todo list)
+├── pyproject.toml       # metadata, dependencies, tool config
+├── PACKAGES.md          # Python packages by engineering field
+├── SPEC.md              # original project design spec
+├── ROADMAP.md           # improvement backlog
 ├── CONTRIBUTOR.md       # how to contribute
 ├── LICENSE              # Apache 2.0
 └── README.md            # you are here
@@ -451,7 +528,7 @@ uv run gui.py
   The result prints to the **Session log** and is recorded in the **Workspace**
   table — just like MATLAB's `ans`/workspace.
 - The interpreter comes preloaded with `math`, `numpy as np`, and a ready
-  instance of every library class (`dyn`, `statics`, `thermo`, `fluids`, …), so
+  instance of every library class (`dyn`, `statics`, `thermo`, `fluids`, `design`, `props`, …), so
   you can compute immediately:
   `dyn.projectile_range(speed=20, angle_deg=45)`.
 - **Open Script** loads a `.py` file into the command box; **Run Script** runs
