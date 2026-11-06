@@ -199,3 +199,15 @@ def test_table_round_trip(tmp_path, suffix):
 def test_table_bad_extension(tmp_path):
     with pytest.raises(ValueError):
         Utility().read_table(file_path=tmp_path / "log.txt")
+
+
+def test_pipe_flow_chains_the_pieces():
+    result = fluids.pipe_flow(flow=0.012, diameter=0.1023, length=120.0,
+                              roughness=0.045e-3, density=998.2, viscosity=1.0016e-3)
+    assert result["velocity"] == pytest.approx(0.012 / (math.pi * 0.1023**2 / 4))
+    assert result["pressure_drop"] == pytest.approx(
+        998.2 * fluids.GRAVITY * result["head_loss"])
+    assert 0.015 < result["friction_factor"] < 0.025
+    with pytest.raises(ValueError):
+        fluids.pipe_flow(flow=0, diameter=0.1, length=1, roughness=0,
+                         density=1000, viscosity=1e-3)

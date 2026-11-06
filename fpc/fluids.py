@@ -150,3 +150,42 @@ class Fluids:
         # brentq is guaranteed to converge once the root is bracketed, which
         # is why it is the default choice for "solve this one equation".
         return brentq(residual, 0.001, 0.2, xtol=1e-12)
+
+    def pipe_flow(self, *, flow, diameter, length, roughness, density, viscosity):
+        """Everything about steady flow through one straight pipe, in one call.
+
+        Chains the methods above: velocity from continuity, Reynolds number,
+        Colebrook friction factor, Darcy-Weisbach head loss, and the pressure
+        drop dp = rho * g * h_f. Returning a dict (instead of a single number)
+        is handy when a report, CLI, or web app wants to show all of it.
+
+        :param flow: volumetric flow rate Q [m^3/s]
+        :param diameter: pipe inner diameter D [m]
+        :param length: pipe length L [m]
+        :param roughness: absolute pipe roughness eps [m]
+            (commercial steel ~0.045e-3, drawn tubing ~0.0015e-3)
+        :param density: fluid density rho [kg/m^3]
+        :param viscosity: dynamic viscosity mu [Pa*s]
+        :returns: dict with ``velocity`` [m/s], ``reynolds`` [-],
+            ``friction_factor`` [-], ``head_loss`` [m], ``pressure_drop`` [Pa]
+        """
+        if flow <= 0 or diameter <= 0 or length <= 0:
+            raise ValueError("flow, diameter, and length must be positive")
+        velocity = flow / (math.pi * diameter**2 / 4)
+        reynolds = self.reynolds_number(
+            density=density, velocity=velocity, length=diameter, viscosity=viscosity,
+        )
+        friction_factor = self.colebrook_friction_factor(
+            reynolds=reynolds, relative_roughness=roughness / diameter,
+        )
+        head_loss = self.pipe_head_loss(
+            friction_factor=friction_factor, length=length, diameter=diameter,
+            velocity=velocity,
+        )
+        return {
+            "velocity": velocity,
+            "reynolds": reynolds,
+            "friction_factor": friction_factor,
+            "head_loss": head_loss,
+            "pressure_drop": density * self.GRAVITY * head_loss,
+        }

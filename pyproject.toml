@@ -20,6 +20,11 @@ dependencies = [
     "scipy-stubs~=1.17.1",
 ]
 
+# Installing the package also installs an `fpc` terminal command that runs
+# fpc/cli.py:main (see docs/building-tools.md, rung 5).
+[project.scripts]
+fpc = "fpc.cli:main"
+
 # The build system turns this repo into an installable package, so other
 # projects can `uv add git+https://github.com/kovirlabs/first-principles-code`
 # (or `pip install -e .`) and then `import fpc`. Hatchling is a small,
@@ -33,6 +38,9 @@ build-backend = "hatchling.build"
 packages = ["fpc"]
 
 [dependency-groups]
+apps = [
+    "streamlit>=1.67.0",
+]
 dev = [
     "pytest>=9.0.3",
 ]
