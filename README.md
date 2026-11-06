@@ -429,6 +429,7 @@ first-principles-code/
 ├── tests/               # pytest suite (uv run pytest)
 ├── pyproject.toml       # project metadata & dependencies
 ├── SPEC.md              # full project design spec
+├── ROADMAP.md           # planned improvements (todo list)
 ├── CONTRIBUTOR.md       # how to contribute
 ├── LICENSE              # Apache 2.0
 └── README.md            # you are here
