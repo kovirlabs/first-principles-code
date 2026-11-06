@@ -36,6 +36,8 @@ Initial class list:
   - a class for classical vibration and modal calculations
 - controls.py
   - a class for P, PD, PID, and other control technology calculations
+- Radiology / medical imaging (added): radiation.py, radiography.py, ct.py,
+  mri.py, ultrasound.py, dicom.py (uses pydicom)
 - "please suggest other classes"
 
 ## Convntions
