@@ -185,3 +185,7 @@ displacement.png
 
 # PyCharm / JetBrains per-user settings
 .idea/
+
+# Figures and tables written by the example scripts and template
+examples/output/
+templates/output/

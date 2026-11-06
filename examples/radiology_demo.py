@@ -3,13 +3,15 @@
 
 """radiology_demo.py - a worked tour of the medical-imaging classes.
 
-Run it with:  uv run radiology_demo.py
+Run it with:  uv run examples/radiology_demo.py
 
 It walks through one calculation per modality, then loads a real (sample,
 anonymous) CT slice with pydicom, converts it to Hounsfield units, and shows
 it in three different windows - the same slice, three very different images.
-The figure is saved to radiology.png.
+The figure is saved to examples/output/radiology.png.
 """
+
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -118,8 +120,11 @@ def ct_windowing():
         axis.axis("off")
 
     figure.tight_layout()
-    figure.savefig("radiology.png", dpi=120)
-    print("\n  Saved figure -> radiology.png")
+    # Save next to this script (not wherever it happened to be run from).
+    output_dir = Path(__file__).resolve().parent / "output"
+    output_dir.mkdir(exist_ok=True)
+    figure.savefig(output_dir / "radiology.png", dpi=120)
+    print(f"\n  Saved figure -> {output_dir / 'radiology.png'}")
 
 
 if __name__ == "__main__":
