@@ -5,7 +5,8 @@
 
 The Utility class collects the "plumbing" every engineering script needs but
 that does not belong to any single physics domain: reading and writing JSON,
-exporting results to CSV (so you can open them in a spreadsheet), and popping up
+exporting results to CSV (so you can open them in a spreadsheet), reading and
+writing tables with pandas (CSV or Excel), and popping up
 a native file-picker dialog with tkinter.
 
 These methods demonstrate working with the file system, the ``json`` and
@@ -15,6 +16,7 @@ gracefully when no display is available (e.g. on a server).
 
 import csv
 import json
+from pathlib import Path
 
 
 class Utility:
@@ -56,6 +58,49 @@ class Utility:
             if header is not None:
                 writer.writerow(header)
             writer.writerows(rows)
+        return file_path
+
+    def read_table(self, *, file_path, sheet_name=0):
+        """Read a CSV or Excel file into a pandas DataFrame.
+
+        pandas is the standard tool for tabular data (sensor logs, test
+        results, property tables). This picks the right reader from the file
+        extension so scripts can accept either format.
+
+        :param file_path: path to a ``.csv``, ``.xlsx``, or ``.xls`` file
+        :param sheet_name: Excel sheet name or 0-based index, defaults to the
+            first sheet (ignored for CSV)
+        :returns: a ``pandas.DataFrame``
+        :raises ValueError: for an unsupported file extension
+        """
+        # Import here so `from fpc import Utility` stays fast for scripts that
+        # never touch tables.
+        import pandas as pd
+
+        suffix = Path(file_path).suffix.lower()
+        if suffix == ".csv":
+            return pd.read_csv(file_path)
+        if suffix in (".xlsx", ".xls"):
+            # Excel support comes from the openpyxl package (a dependency).
+            return pd.read_excel(file_path, sheet_name=sheet_name)
+        raise ValueError(f"unsupported table format {suffix!r}; use .csv or .xlsx")
+
+    def write_table(self, *, frame, file_path):
+        """Write a pandas DataFrame to CSV or Excel, chosen by file extension.
+
+        :param frame: the ``pandas.DataFrame`` to save
+        :param file_path: destination ``.csv`` or ``.xlsx`` path
+        :returns: the file_path that was written
+        :raises ValueError: for an unsupported file extension
+        """
+        suffix = Path(file_path).suffix.lower()
+        # index=False: the row numbers are pandas bookkeeping, not data.
+        if suffix == ".csv":
+            frame.to_csv(file_path, index=False)
+        elif suffix == ".xlsx":
+            frame.to_excel(file_path, index=False)
+        else:
+            raise ValueError(f"unsupported table format {suffix!r}; use .csv or .xlsx")
         return file_path
 
     def pick_file(self, *, title="Select a file", file_types=(("All files", "*.*"),)):

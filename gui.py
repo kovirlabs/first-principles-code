@@ -37,7 +37,7 @@ import numpy as np
 # Pull in the whole engineering library plus the file/export helper.
 from fpc import (
     Dynamics, Statics, Modal, Thermo, Fluids, Material,
-    Gear, Electrical, Mechatronics, Controls, Utility,
+    Gear, Electrical, Mechatronics, Controls, Utility, Design, Properties,
     Radiation, Radiography, CT, MRI, Ultrasound, Dicom,
 )
 
@@ -67,6 +67,8 @@ class Session:
             "electrical": Electrical(),
             "mechatronics": Mechatronics(),
             "controls": Controls(),
+            "design": Design(),
+            "props": Properties(),
             # Radiology / medical imaging.
             "radiation": Radiation(),
             "radiography": Radiography(),

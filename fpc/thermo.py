@@ -5,8 +5,11 @@
 
 Thermodynamics tracks energy as it moves between heat and work. These helpers
 cover the ideal gas law, heat transfer by conduction and convection, sensible
-heat, and the Carnot efficiency limit on heat engines.
+heat, the Carnot efficiency limit on heat engines, and the log-mean
+temperature difference used to size heat exchangers.
 """
+
+import math
 
 
 class Thermo:
@@ -81,3 +84,26 @@ class Thermo:
         :returns: temperature [K]
         """
         return celsius + 273.15
+
+    def log_mean_temperature_difference(self, *, delta_t_1, delta_t_2):
+        """Log-mean temperature difference (LMTD) for a heat exchanger.
+
+        LMTD = (dT1 - dT2) / ln(dT1 / dT2), where dT1 and dT2 are the hot-cold
+        temperature differences at the two ends of the exchanger. The duty is
+        then Q = U * A * LMTD. When dT1 == dT2 the formula is 0/0; its limit
+        is simply dT1, which we return directly.
+
+        For counterflow: dT1 = Th_in - Tc_out, dT2 = Th_out - Tc_in.
+        For parallel flow: dT1 = Th_in - Tc_in, dT2 = Th_out - Tc_out.
+
+        :param delta_t_1: temperature difference at one end [K]
+        :param delta_t_2: temperature difference at the other end [K]
+        :returns: log-mean temperature difference [K]
+        :raises ValueError: if either difference is not positive (that would
+            mean the streams cross, which a simple exchanger cannot do)
+        """
+        if delta_t_1 <= 0 or delta_t_2 <= 0:
+            raise ValueError("both end temperature differences must be positive")
+        if math.isclose(delta_t_1, delta_t_2):
+            return delta_t_1
+        return (delta_t_1 - delta_t_2) / math.log(delta_t_1 / delta_t_2)

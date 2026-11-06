@@ -1,0 +1,11 @@
+name,category,density_kg_m3,youngs_modulus_gpa,yield_strength_mpa,ultimate_strength_mpa,thermal_expansion_per_k,thermal_conductivity_w_m_k
+steel_a36,steel,7850,200,250,400,1.17e-05,51.9
+steel_1018_cold_drawn,steel,7870,205,370,440,1.19e-05,51.9
+stainless_304,stainless steel,8000,193,215,505,1.73e-05,16.2
+stainless_316,stainless steel,8000,193,205,515,1.60e-05,16.3
+aluminum_6061_t6,aluminum,2700,68.9,276,310,2.36e-05,167
+aluminum_7075_t6,aluminum,2810,71.7,503,572,2.36e-05,130
+titanium_ti6al4v,titanium,4430,113.8,880,950,8.6e-06,6.7
+copper_c11000_annealed,copper,8890,115,69,220,1.70e-05,388
+brass_c26000_annealed,copper alloy,8530,110,75,300,1.99e-05,120
+nylon_66,polymer,1140,2.9,82,82,8.0e-05,0.25

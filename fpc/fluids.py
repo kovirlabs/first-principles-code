@@ -7,9 +7,15 @@ Fluid mechanics governs anything that flows: pipes, pumps, wings, and weather.
 These helpers cover the core dimensionless groups and conservation laws -
 Reynolds number, the continuity equation, Bernoulli's equation, dynamic
 pressure, and pipe friction losses.
+
+``colebrook_friction_factor`` is also the project's root-finding lesson: the
+Colebrook equation cannot be rearranged for f, so we hand it to
+``scipy.optimize.brentq`` and let the computer find the f that satisfies it.
 """
 
 import math
+
+from scipy.optimize import brentq
 
 
 class Fluids:
@@ -92,3 +98,55 @@ class Fluids:
         :returns: head loss [m of fluid]
         """
         return friction_factor * (length / diameter) * velocity ** 2 / (2 * gravity)
+
+    def swamee_jain_friction_factor(self, *, reynolds, relative_roughness):
+        """Explicit approximation to the Colebrook friction factor (Swamee-Jain).
+
+        f = 0.25 / [log10(eps/(3.7*D) + 5.74/Re^0.9)]^2, within about 1% of
+        Colebrook for 5e3 < Re < 1e8 and 1e-6 < eps/D < 1e-2. Handy as a quick
+        estimate, and as the starting guess for the exact solve below.
+
+        :param reynolds: Reynolds number Re [-] (turbulent flow)
+        :param relative_roughness: pipe roughness / diameter, eps/D [-]
+        :returns: Darcy friction factor f [-]
+        """
+        return 0.25 / math.log10(relative_roughness / 3.7 + 5.74 / reynolds ** 0.9) ** 2
+
+    def colebrook_friction_factor(self, *, reynolds, relative_roughness):
+        """Darcy friction factor from the Colebrook equation, solved numerically.
+
+        Colebrook (turbulent pipe flow) is *implicit* - f appears on both sides:
+
+            1/sqrt(f) = -2 * log10( (eps/D)/3.7 + 2.51 / (Re * sqrt(f)) )
+
+        There is no algebra that isolates f, so we turn it into a root-finding
+        problem: define residual(f) = left side - right side and ask
+        ``scipy.optimize.brentq`` for the f where residual(f) = 0. Brent's
+        method needs a bracket [a, b] where the residual changes sign; every
+        turbulent pipe has 0.001 < f < 0.2, so that bracket always works.
+
+        For laminar flow (Re < 2300) the exact answer is simply f = 64/Re.
+
+        :param reynolds: Reynolds number Re [-]
+        :param relative_roughness: pipe roughness / diameter, eps/D [-]
+            (e.g. commercial steel eps = 0.045 mm)
+        :returns: Darcy friction factor f [-]
+        :raises ValueError: for non-positive Re or negative roughness
+        """
+        if reynolds <= 0:
+            raise ValueError("reynolds must be positive")
+        if relative_roughness < 0:
+            raise ValueError("relative_roughness cannot be negative")
+        if reynolds < 2300:
+            # Laminar: Hagen-Poiseuille gives an exact closed form.
+            return 64.0 / reynolds
+
+        def residual(f):
+            """Colebrook rearranged so the correct f makes this zero."""
+            return 1 / math.sqrt(f) + 2 * math.log10(
+                relative_roughness / 3.7 + 2.51 / (reynolds * math.sqrt(f))
+            )
+
+        # brentq is guaranteed to converge once the root is bracketed, which
+        # is why it is the default choice for "solve this one equation".
+        return brentq(residual, 0.001, 0.2, xtol=1e-12)

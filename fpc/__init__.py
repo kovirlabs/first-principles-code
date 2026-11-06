@@ -34,6 +34,10 @@ from fpc.mechatronics import Mechatronics
 from fpc.controls import Controls
 from fpc.utility import Utility
 
+# Design (root finding / optimization) and reference-data lookups.
+from fpc.design import Design
+from fpc.properties import Properties
+
 # Medical imaging / radiology classes.
 from fpc.radiation import Radiation
 from fpc.radiography import Radiography
@@ -58,6 +62,8 @@ __all__ = [
     "Mechatronics",
     "Controls",
     "Utility",
+    "Design",
+    "Properties",
     "Radiation",
     "Radiography",
     "CT",
