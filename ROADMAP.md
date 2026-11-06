@@ -12,8 +12,8 @@ whole: structure, tooling, docs, and discoverability.
 number next to it. Items marked **(decision needed)** wait on the maintainer's
 call before work starts. Keep items in priority order within each section.
 
-_Last reviewed: 2026-11-06. Sections 0-8 were built on branch
-`feat/roadmap-buildout`; see "Follow-ups" for what remains._
+_Last reviewed: 2026-11-06. Sections 0-8 were built in #6 (branch
+`feat/roadmap-buildout`); see "Follow-ups" for what remains._
 
 ---
 
