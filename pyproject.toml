@@ -44,6 +44,11 @@ apps = [
 dev = [
     "pytest>=9.0.3",
 ]
+notebooks = [
+    "ipykernel>=7.4.0",
+    "jupyter>=1.1.1",
+    "nbclient>=0.11.0",
+]
 
 # pytest configuration: where to find tests and how to report.
 [tool.pytest.ini_options]
