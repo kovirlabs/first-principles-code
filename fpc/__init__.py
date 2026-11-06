@@ -6,8 +6,8 @@
 Each module in this package holds one class for one engineering domain. Import
 the class you need, create an instance, and call its methods::
 
-    from library.dynamics import Dynamics
-    from library.statics import Statics
+    from fpc.dynamics import Dynamics
+    from fpc.statics import Statics
 
     dyn = Dynamics()
     x = dyn.displacement_constant_acceleration(
@@ -20,31 +20,31 @@ reads as a self-contained, well-documented worked example.
 """
 
 # Re-export the domain classes so callers can also write
-# ``from library import Dynamics``. Keeping this list in one place documents
+# ``from fpc import Dynamics``. Keeping this list in one place documents
 # everything the library currently offers.
-from library.dynamics import Dynamics
-from library.statics import Statics
-from library.modal import Modal
-from library.thermo import Thermo
-from library.fluids import Fluids
-from library.material import Material
-from library.gear import Gear
-from library.electrical import Electrical
-from library.mechatronics import Mechatronics
-from library.controls import Controls
-from library.utility import Utility
+from fpc.dynamics import Dynamics
+from fpc.statics import Statics
+from fpc.modal import Modal
+from fpc.thermo import Thermo
+from fpc.fluids import Fluids
+from fpc.material import Material
+from fpc.gear import Gear
+from fpc.electrical import Electrical
+from fpc.mechatronics import Mechatronics
+from fpc.controls import Controls
+from fpc.utility import Utility
 
 # Medical imaging / radiology classes.
-from library.radiation import Radiation
-from library.radiography import Radiography
-from library.ct import CT
-from library.mri import MRI
-from library.ultrasound import Ultrasound
-from library.dicom import Dicom
+from fpc.radiation import Radiation
+from fpc.radiography import Radiography
+from fpc.ct import CT
+from fpc.mri import MRI
+from fpc.ultrasound import Ultrasound
+from fpc.dicom import Dicom
 
 # Unit-aware modelling: the shared Pint registry and the Beam dataclass.
-from library.units import ureg, Q_
-from library.beam import Beam
+from fpc.units import ureg, Q_
+from fpc.beam import Beam
 
 __all__ = [
     "Dynamics",

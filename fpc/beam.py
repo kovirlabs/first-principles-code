@@ -13,8 +13,8 @@ This module shows two ideas working together:
 
 Build one like this::
 
-    from library.units import Q_
-    from library.beam import Beam
+    from fpc.units import Q_
+    from fpc.beam import Beam
 
     beam = Beam(
         length=Q_(2.0, "m"),
@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 
 from pint import Quantity
 
-from library.units import Q_
+from fpc.units import Q_
 
 
 # A sensible default material so a beam can be created with just its geometry.

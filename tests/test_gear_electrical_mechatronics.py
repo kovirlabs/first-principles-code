@@ -7,9 +7,9 @@ import math
 
 import pytest
 
-from library.gear import Gear
-from library.electrical import Electrical
-from library.mechatronics import Mechatronics
+from fpc.gear import Gear
+from fpc.electrical import Electrical
+from fpc.mechatronics import Mechatronics
 
 gear = Gear()
 electrical = Electrical()

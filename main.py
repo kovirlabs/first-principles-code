@@ -37,9 +37,9 @@ from scipy import integrate
 import matplotlib.pyplot as plt
 
 # --- Project library --------------------------------------------------------
-# Our own dynamics helpers live in ./library. This is how you import a class
+# Our own dynamics helpers live in ./fpc. This is how you import a class
 # you wrote yourself and reuse it across scripts.
-from library.dynamics import Dynamics
+from fpc.dynamics import Dynamics
 
 
 def analytical_displacement(*, initial_position, initial_velocity, acceleration, time):

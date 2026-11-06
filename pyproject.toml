@@ -4,6 +4,8 @@
 [project]
 name = "first-principles-code"
 version = "0.1.0"
+description = "A teaching library of first-principles engineering calculations in Python."
+readme = "README.md"
 requires-python = ">=3.14"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -16,6 +18,18 @@ dependencies = [
     "scipy-stubs~=1.17.1",
 ]
 
+# The build system turns this repo into an installable package, so other
+# projects can `uv add git+https://github.com/kovirlabs/first-principles-code`
+# (or `pip install -e .`) and then `import fpc`. Hatchling is a small,
+# standards-based build backend; the distribution name (first-principles-code)
+# differs from the import name (fpc), so we point it at the package folder.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["fpc"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
@@ -25,6 +39,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"
-# Put the project root on sys.path so tests can `import library` / `import gui`
+# Put the project root on sys.path so tests can `import fpc` / `import gui`
 # without installing the project as a package.
 pythonpath = ["."]

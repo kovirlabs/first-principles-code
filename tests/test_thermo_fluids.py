@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 
-"""Tests for library.thermo.Thermo and library.fluids.Fluids."""
+"""Tests for fpc.thermo.Thermo and fpc.fluids.Fluids."""
 
 import pytest
 
-from library.thermo import Thermo
-from library.fluids import Fluids
+from fpc.thermo import Thermo
+from fpc.fluids import Fluids
 
 thermo = Thermo()
 fluids = Fluids()

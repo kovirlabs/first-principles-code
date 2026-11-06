@@ -18,7 +18,7 @@ _Last reviewed: 2026-11-06_
 
 ## 0. Housekeeping (quick, low risk)
 
-- [ ] **Update `CLAUDE.md`.** It still says `library/` is empty, `main.py` is
+- [ ] **Update `CLAUDE.md`.** It still says `fpc/` is empty, `main.py` is
   hello-world, and there are no tests or README. Rewrite "Current state" to
   match reality (14 domain classes + 6 radiology classes, 109 tests, CI, GUI).
 - [ ] **Stop tracking `.idea/`.** `git rm -r --cached .idea` and add `.idea/`
@@ -70,7 +70,7 @@ _Last reviewed: 2026-11-06_
 
 ## 3. Make the library reusable outside this repo
 
-- [ ] **(decision needed) Rename the `library` package.** The name is generic
+- [ ] **(decision needed) Rename the `fpc` package.** The name is generic
   and collides with other code. Candidate: `fpc` (first-principles-code).
   This breaks every existing import, so do it in one PR that updates all
   imports, tests, README, GUI, and demos.
@@ -106,7 +106,7 @@ Tracked in detail in [SPEC.md](SPEC.md) under "Python concepts to teach".
 
 - [ ] **Ruff** for linting and formatting: add to the dev group, configure in
   `pyproject.toml`, run in CI.
-- [ ] **Type checking** (mypy or pyright) on `library/`, starting non-strict.
+- [ ] **Type checking** (mypy or pyright) on `fpc/`, starting non-strict.
 - [ ] **API docs site** generated from the docstrings (mkdocs-material +
   mkdocstrings), published with GitHub Pages.
 - [ ] **pre-commit** hooks so ruff and tests run before each commit.

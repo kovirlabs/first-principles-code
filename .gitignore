@@ -182,3 +182,6 @@ displacement.png
 *.png
 # ...but keep the committed GitHub social-preview card
 !.github/social-preview.png
+
+# PyCharm / JetBrains per-user settings
+.idea/

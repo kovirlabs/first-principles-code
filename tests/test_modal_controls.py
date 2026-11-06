@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 
-"""Tests for library.modal.Modal and library.controls.Controls.
+"""Tests for fpc.modal.Modal and fpc.controls.Controls.
 
 Shows how to test code that returns numpy arrays (check the shape and a few
 values) and how to test a simulation (check it converges to the right answer).
@@ -12,8 +12,8 @@ import math
 import numpy as np
 import pytest
 
-from library.modal import Modal
-from library.controls import Controls
+from fpc.modal import Modal
+from fpc.controls import Controls
 
 modal = Modal()
 controls = Controls()

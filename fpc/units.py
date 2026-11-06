@@ -10,7 +10,7 @@ catches the unit-mismatch mistakes that plain floats silently let through.
 IMPORTANT: Pint quantities can only be combined if they come from the SAME
 registry. So the project defines exactly one here and everything imports it::
 
-    from library.units import ureg, Q_
+    from fpc.units import ureg, Q_
 
     length = 2 * ureg.meter          # or:  Q_(2, "meter")
     force = Q_(1000, "newton")

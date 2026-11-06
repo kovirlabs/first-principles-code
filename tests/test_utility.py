@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 
-"""Tests for library.utility.Utility.
+"""Tests for fpc.utility.Utility.
 
 Demonstrates pytest's ``tmp_path`` fixture: pytest hands each test a unique,
 automatically-cleaned temporary directory, so file I/O can be tested without
 leaving junk behind or touching the real project files.
 """
 
-from library.utility import Utility
+from fpc.utility import Utility
 
 utility = Utility()
 

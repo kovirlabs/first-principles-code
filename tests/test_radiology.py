@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 from pydicom.data import get_testdata_file
 
-from library import CT, MRI, Dicom, Radiation, Radiography, Ultrasound
+from fpc import CT, MRI, Dicom, Radiation, Radiography, Ultrasound
 
 radiation = Radiation()
 radiography = Radiography()

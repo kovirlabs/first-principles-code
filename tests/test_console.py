@@ -47,7 +47,7 @@ def test_runtime_error_is_reported_without_crashing():
 
 
 def test_export_csv_and_json(tmp_path):
-    """Recorded results export to both formats via library.Utility."""
+    """Recorded results export to both formats via fpc.Utility."""
     session = Session()
     session.run(source="dyn.kinetic_energy(mass=2, velocity=3)")
 

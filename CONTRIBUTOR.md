@@ -43,8 +43,8 @@ Because the code teaches, these conventions are requirements, not suggestions:
   step, not just what the line does.
 - **One domain per file, one class per file**, matching the existing layout.
 - **State the units** for every physical quantity. For anything where unit
-  mistakes are likely, prefer modelling it with Pint (see `library/units.py`
-  and `library/beam.py`).
+  mistakes are likely, prefer modelling it with Pint (see `fpc/units.py`
+  and `fpc/beam.py`).
 - **Validate inputs** that can realistically be wrong (negative area, wrong
   units) and `raise ValueError` with a clear message — see `Beam.__post_init__`.
 - **Keep methods stateless** where possible, so each one stands alone as a

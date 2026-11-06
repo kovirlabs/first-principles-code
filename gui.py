@@ -14,10 +14,10 @@ What it gives you (a free, open-source take on the MATLAB command window):
     * A "Workspace" table that records every expression result so you can see
       your session at a glance - much like MATLAB's workspace pane.
     * Buttons to open a .py file into the command box, run it, clear the log,
-      and EXPORT the recorded results to CSV or JSON (via library.Utility).
+      and EXPORT the recorded results to CSV or JSON (via fpc.Utility).
 
 The interpreter namespace comes preloaded with ``math``, ``numpy as np``, and an
-instance of every engineering class in ``library`` (lower-cased: ``dyn``,
+instance of every engineering class in ``fpc`` (lower-cased: ``dyn``,
 ``statics``, ``thermo``, ...), so you can start computing immediately, e.g.::
 
     dyn.projectile_range(speed=20, angle_deg=45)
@@ -35,7 +35,7 @@ import math
 import numpy as np
 
 # Pull in the whole engineering library plus the file/export helper.
-from library import (
+from fpc import (
     Dynamics, Statics, Modal, Thermo, Fluids, Material,
     Gear, Electrical, Mechatronics, Controls, Utility,
     Radiation, Radiography, CT, MRI, Ultrasound, Dicom,
@@ -136,7 +136,7 @@ class Session:
         return result
 
     def export_csv(self, *, file_path):
-        """Write the recorded results to a CSV file using library.Utility.
+        """Write the recorded results to a CSV file using fpc.Utility.
 
         :param file_path: destination .csv path
         :returns: the file path written
@@ -149,7 +149,7 @@ class Session:
         )
 
     def export_json(self, *, file_path):
-        """Write the recorded results to a JSON file using library.Utility.
+        """Write the recorded results to a JSON file using fpc.Utility.
 
         :param file_path: destination .json path
         :returns: the file path written

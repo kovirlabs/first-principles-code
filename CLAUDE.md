@@ -9,38 +9,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A teaching template: a Python script + class library meant to functionally teach engineers Python techniques and empower them to solve real-world engineering problems. Because it's a teaching artifact, code clarity, docstrings, and explanatory comments are first-class deliverables — not afterthoughts. See "Authoring conventions" below.
 
-The full project design — intended `main.py` demo, the per-domain library classes, and the README deliverables — lives in [SPEC.md](SPEC.md). Read it before implementing features.
+The original design lives in [SPEC.md](SPEC.md); the improvement backlog lives in [ROADMAP.md](ROADMAP.md). Read both before starting new work.
 
-## Current state vs. intended design
+## Current state
 
-The repo is scaffolded but largely unimplemented. Know the difference before you start:
-
-- `main.py` — currently PyCharm hello-world boilerplate. **Intended (SPEC):** a demo that calculates displacement from a known acceleration and velocity as a function of time (using `math` / `scipy`).
-- `library/` — empty except an `__include__` marker file. **Intended (SPEC):** one class per engineering domain.
-- `pyproject.toml` — `dependencies = []`. Add `scipy` (and likely `numpy`) here when implementing the `main.py` demo and the math-heavy classes.
-- No README, no tests yet — both are intended deliverables.
+- `main.py` — displacement demo (closed form, `scipy` integration, library call) that prints results and saves a plot.
+- `fpc/` — the installable package (import name `fpc`, distribution name `first-principles-code`). One class per engineering domain (Dynamics, Statics, Modal, Thermo, Fluids, Material, Gear, Electrical, Mechatronics, Controls, Utility, Solvers, plus the radiology set Radiation, Radiography, CT, MRI, Ultrasound, Dicom), the shared Pint registry in `fpc/units.py`, and the unit-aware `Beam` dataclass.
+- `gui.py` — tkinter MATLAB-style console; the `Session` class is GUI-free and tested.
+- `tests/` — pytest suite, run in CI (`.github/workflows/tests.yml`).
+- `examples/` — one self-contained worked problem per script; `templates/` — copy-and-adapt starting scripts; `notebooks/` — Jupyter notebooks; `data/` — cited reference tables (CSV/JSON); `docs/` — mkdocs site sources and guides.
+- `PACKAGES.md` — curated package list by engineering field.
 
 ## Tooling & commands
 
-Python **3.14+**, managed with **uv** (a `.venv` already exists).
+Python **3.14+**, managed with **uv**.
 
 ```bash
-uv sync                  # install deps from pyproject.toml into .venv
-uv add scipy numpy       # add a dependency (edits pyproject.toml + lockfile)
-uv run main.py           # run the main script
-uv run python -c "..."   # run arbitrary python in the project env
+uv sync --all-groups     # install runtime + dev + notebook deps
+uv run main.py           # run the main demo
+uv run pytest            # run tests (single test: uv run pytest path::test_name)
+uv run ruff check .      # lint
+uv run ruff format .     # format
+uv run mypy fpc          # type-check the package
+uv run mkdocs serve      # preview the API docs site
+uv run pre-commit install  # enable git hooks (ruff + pytest)
 ```
-
-There is no test runner or linter configured yet. If you add tests, prefer `pytest` (`uv add --dev pytest`, run with `uv run pytest`, single test via `uv run pytest path::test_name`).
 
 ## Library architecture
 
-`./library` holds one class per engineering domain, each class grouping related calculation methods (see SPEC.md for the full planned class list). When adding domains beyond that list, follow the same one-class-per-file, domain-grouped pattern.
+`fpc/` holds one class per engineering domain, each grouping related calculation methods. When adding a domain, follow the checklist in [CONTRIBUTOR.md](CONTRIBUTOR.md) (module, class, `__init__` export, GUI preload, tests, README row, docs page).
+
+Units: plain floats in SI units for quick formulas; Pint quantities (`fpc.units.Q_`) where units are mixed or error-prone. See `docs/units.md`.
 
 ## Authoring conventions
 
 These exist to make the code itself a teaching tool — follow them in all new code:
 
-- Use `**kwargs` for method/function parameters to demonstrate verbose, explicit variable passing.
-- Every class and method gets a docstring — they double as documentation examples.
+- Use keyword-only arguments (`def method(self, *, ...)`) to demonstrate verbose, explicit variable passing.
+- Every class and method gets a docstring with parameter units — they double as documentation examples.
 - Comment significant code sections explaining the *why*, not just the *what*.

@@ -64,7 +64,7 @@ class CT:
         DICOM files usually store unsigned integers; the RescaleSlope and
         RescaleIntercept tags (0028,1053 / 0028,1052) say how to recover HU.
         Forgetting this step is a classic beginner bug: every value is off by
-        ~1024. See :class:`library.dicom.Dicom` for reading these from a file.
+        ~1024. See :class:`fpc.dicom.Dicom` for reading these from a file.
 
         :param stored_values: raw pixel values (number or array)
         :param rescale_slope: DICOM RescaleSlope

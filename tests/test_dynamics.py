@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 
-"""Tests for library.dynamics.Dynamics.
+"""Tests for fpc.dynamics.Dynamics.
 
 These tests double as a pytest tutorial. Notice three ideas:
 
@@ -16,7 +16,7 @@ Run just this file with:  uv run pytest tests/test_dynamics.py
 
 import pytest
 
-from library.dynamics import Dynamics
+from fpc.dynamics import Dynamics
 
 # One shared instance is fine because the methods hold no state.
 dyn = Dynamics()

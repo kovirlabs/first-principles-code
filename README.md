@@ -13,7 +13,7 @@ You get:
   acceleration and velocity three different ways (closed-form, numerical
   integration of constant acceleration, and numerical integration of a
   time-varying acceleration).
-- **`library/`** — one well-documented class per engineering domain
+- **`fpc/`** — one well-documented class per engineering domain
   (dynamics, statics, thermo, fluids, materials, gears, electrical,
   mechatronics, modal/vibration, controls), a set of radiology /
   medical-imaging classes, and a `Utility` class for files and dialogs.
@@ -106,8 +106,8 @@ Import a class, create an instance, and call its methods with **named
 arguments** (this is the project's house style — calls read like sentences):
 
 ```python
-from library.dynamics import Dynamics
-from library.thermo import Thermo
+from fpc.dynamics import Dynamics
+from fpc.thermo import Thermo
 
 dyn = Dynamics()
 distance = dyn.displacement_constant_acceleration(
@@ -125,7 +125,7 @@ efficiency = thermo.carnot_efficiency(hot_temperature=800, cold_temperature=300)
 You can also import everything at once:
 
 ```python
-from library import Dynamics, Statics, Fluids, Controls
+from fpc import Dynamics, Statics, Fluids, Controls
 ```
 
 ### Creating and calling objects from lists and dictionaries
@@ -134,7 +134,7 @@ A common pattern: build several objects, store them in a container, then loop
 over them. This is how you scale from one calculation to a whole study.
 
 ```python
-from library.dynamics import Dynamics
+from fpc.dynamics import Dynamics
 
 dyn = Dynamics()
 
@@ -163,7 +163,7 @@ for name, modulus in materials.items():
 ### Conditional flow control and loops
 
 ```python
-from library.fluids import Fluids
+from fpc.fluids import Fluids
 
 fluids = Fluids()
 re = fluids.reynolds_number(density=1000, velocity=2, length=0.05, viscosity=1e-3)
@@ -208,14 +208,14 @@ kelvin = list(map(lambda c: c + 273.15, celsius))   # [273.15, 298.15, 373.15]
 
 ## Modelling things with units: the `Beam` dataclass
 
-`library/beam.py` shows how to model a real object as a `@dataclass` whose
+`fpc/beam.py` shows how to model a real object as a `@dataclass` whose
 fields carry **physical units** (via [Pint](https://pint.readthedocs.io/)).
 A `Beam` knows its own geometry and computes its structural behaviour — and the
 units make the math self-checking.
 
 ```python
-from library.units import Q_       # Q_(value, "unit") builds a quantity
-from library.beam import Beam
+from fpc.units import Q_       # Q_(value, "unit") builds a quantity
+from fpc.beam import Beam
 
 beam = Beam(
     length=Q_(2.0, "m"),
@@ -239,7 +239,7 @@ Beam(length=Q_(2, "s"), ...)     # raises ValueError - a time is not a length
 ```
 
 All quantities must come from the **one shared registry** in
-`library/units.py` (Pint cannot combine quantities from different registries).
+`fpc/units.py` (Pint cannot combine quantities from different registries).
 
 ## Simulation & data fitting (SciPy)
 
@@ -254,7 +254,7 @@ Two SciPy workhorses show up where formulas run out:
   measured vibration and returns the natural frequency and damping ratio.
 
 ```python
-from library.modal import Modal
+from fpc.modal import Modal
 modal = Modal()
 
 # Simulate a known oscillator...
@@ -279,16 +279,16 @@ slice in abdomen, lung, and bone windows.
 
 | Class | Module | What it covers |
 | --- | --- | --- |
-| `Radiation` | `library/radiation.py` | Inverse square law, attenuation (mu, HVL, TVL, shielding), photon energy, radioactive and effective half-life, equivalent/effective dose with ICRP 103 weighting factors |
-| `Radiography` | `library/radiography.py` | mAs, 15% rule, exposure-maintenance (SID) formula, grid conversion, heat units, magnification, geometric unsharpness, detector Nyquist limit, deviation index |
-| `CT` | `library/ct.py` | Hounsfield units, DICOM rescale, window width/level with presets, rough HU tissue lookup, DLP and effective dose estimate |
-| `MRI` | `library/mri.py` | Larmor frequency, T1 recovery, T2 decay, spin-echo signal, T1/T2/PD weighting from TR/TE |
-| `Ultrasound` | `library/ultrasound.py` | Wavelength, echo depth, acoustic impedance and reflection, attenuation, axial resolution, PRF depth limit, Doppler shift and velocity |
-| `Dicom` | `library/dicom.py` | Read DICOM with pydicom, summarize technical tags, pixels in HU, pixel spacing, basic de-identification, PNG export |
+| `Radiation` | `fpc/radiation.py` | Inverse square law, attenuation (mu, HVL, TVL, shielding), photon energy, radioactive and effective half-life, equivalent/effective dose with ICRP 103 weighting factors |
+| `Radiography` | `fpc/radiography.py` | mAs, 15% rule, exposure-maintenance (SID) formula, grid conversion, heat units, magnification, geometric unsharpness, detector Nyquist limit, deviation index |
+| `CT` | `fpc/ct.py` | Hounsfield units, DICOM rescale, window width/level with presets, rough HU tissue lookup, DLP and effective dose estimate |
+| `MRI` | `fpc/mri.py` | Larmor frequency, T1 recovery, T2 decay, spin-echo signal, T1/T2/PD weighting from TR/TE |
+| `Ultrasound` | `fpc/ultrasound.py` | Wavelength, echo depth, acoustic impedance and reflection, attenuation, axial resolution, PRF depth limit, Doppler shift and velocity |
+| `Dicom` | `fpc/dicom.py` | Read DICOM with pydicom, summarize technical tags, pixels in HU, pixel spacing, basic de-identification, PNG export |
 
 ```python
 from pydicom.data import get_testdata_file   # sample images, no patient data
-from library import CT, Dicom, Radiography, Radiation
+from fpc import CT, Dicom, Radiography, Radiation
 
 radiation = Radiation()
 radiation.effective_dose(organ_equivalent_doses={"thyroid": 10.0})   # -> 0.4 mSv
@@ -339,7 +339,7 @@ demonstrates `pytest.approx` (comparing floats), `@pytest.mark.parametrize`
 (table-driven tests), and the `tmp_path` fixture (temporary files).
 
 ```bash
-uv run pytest                       # run everything (40+ tests)
+uv run pytest                          # run everything
 uv run pytest tests/test_dynamics.py   # run one file
 uv run pytest -k projectile            # run tests whose name matches "projectile"
 ```
@@ -405,7 +405,7 @@ first-principles-code/
 ├── main.py              # displacement demo (start here)
 ├── gui.py               # MATLAB-style console GUI (uv run gui.py)
 ├── radiology_demo.py    # medical-imaging tour (uv run radiology_demo.py)
-├── library/             # one class per engineering domain
+├── fpc/             # one class per engineering domain
 │   ├── __init__.py      # re-exports every class
 │   ├── units.py         # shared Pint unit registry (ureg, Q_)
 │   ├── beam.py          # unit-aware Beam dataclass
@@ -454,7 +454,7 @@ uv run gui.py
 - **Open Script** loads a `.py` file into the command box; **Run Script** runs
   the whole box at once.
 - **Export CSV** / **Export JSON** save every recorded result to disk (via
-  `library.Utility`).
+  `fpc.Utility`).
 
 > The GUI needs a graphical display. The evaluation engine (the `Session`
 > class) is separated from the Tk widgets, so it can be imported and scripted

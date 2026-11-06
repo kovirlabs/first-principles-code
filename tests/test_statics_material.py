@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 
-"""Tests for library.statics.Statics and library.material.Material."""
+"""Tests for fpc.statics.Statics and fpc.material.Material."""
 
 import pytest
 
-from library.statics import Statics
-from library.material import Material
+from fpc.statics import Statics
+from fpc.material import Material
 
 statics = Statics()
 material = Material()

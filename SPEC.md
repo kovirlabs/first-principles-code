@@ -10,7 +10,7 @@ A Github repo that provides a template Python script and class library that func
 ### main.py
 The primary script with some basic imports for math and scipy. It should demonstrate how to calculate displacement from a known acceleration and velocity as a function of time.
 
-### ./library
+### ./fpc
 A direcotry that will contain all classes.
 
 Initial class list:
@@ -72,11 +72,11 @@ visualize, and trust." Listed roughly in order of payoff. Items marked
    (`optimize.brentq`, `fsolve`) and interpolation (`scipy.interpolate`).
 4. **Physical units with Pint (done)** — quantities that carry units,
    auto-convert, and raise if you add metres to seconds. The shared registry
-   lives in `library/units.py`; `library/beam.py` uses it. Guards against
+   lives in `fpc/units.py`; `fpc/beam.py` uses it. Guards against
    unit-mismatch errors that plain floats cannot catch.
 5. **Type hints and dataclasses (done)** — annotate units/types on signatures
    so the editor catches mistakes; model entities as `@dataclass` objects
-   instead of passing loose floats. See `Beam` in `library/beam.py`.
+   instead of passing loose floats. See `Beam` in `fpc/beam.py`.
 6. **Error handling and input validation (done)** — `raise ValueError(...)` for
    bad inputs (wrong units, negative dimensions); see `Beam.__post_init__`.
 7. **Testing with pytest (done)** — pure-function methods checked against known
