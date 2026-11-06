@@ -37,8 +37,12 @@ viscosity = props.water_liquid(temperature_c=temperature_c, property="dynamic_vi
 
 def run(flow_l_s):
     return fluids.pipe_flow(
-        flow=flow_l_s / 1000, diameter=diameter_mm / 1000, length=length_m,
-        roughness=roughness_mm / 1000, density=density, viscosity=viscosity,
+        flow=flow_l_s / 1000,
+        diameter=diameter_mm / 1000,
+        length=length_m,
+        roughness=roughness_mm / 1000,
+        density=density,
+        viscosity=viscosity,
     )
 
 
@@ -50,8 +54,10 @@ right.metric("Pressure drop", f"{result['pressure_drop'] / 1000:.2f} kPa")
 
 # A curve is more useful than one number: dp across a range of flows.
 flows = np.linspace(0.1 * flow_l_s, 2 * flow_l_s, 40)
-curve = pd.DataFrame({
-    "flow [L/s]": flows,
-    "pressure drop [kPa]": [run(q)["pressure_drop"] / 1000 for q in flows],
-}).set_index("flow [L/s]")
+curve = pd.DataFrame(
+    {
+        "flow [L/s]": flows,
+        "pressure drop [kPa]": [run(q)["pressure_drop"] / 1000 for q in flows],
+    }
+).set_index("flow [L/s]")
 st.line_chart(curve)

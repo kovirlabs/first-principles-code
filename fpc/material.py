@@ -86,4 +86,4 @@ class Material:
         :returns: critical axial load [N]
         """
         effective_length = end_factor * length
-        return math.pi ** 2 * modulus * moment_of_inertia / effective_length ** 2
+        return math.pi**2 * modulus * moment_of_inertia / effective_length**2

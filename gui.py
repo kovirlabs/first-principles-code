@@ -36,9 +36,25 @@ import numpy as np
 
 # Pull in the whole engineering library plus the file/export helper.
 from fpc import (
-    Dynamics, Statics, Modal, Thermo, Fluids, Material,
-    Gear, Electrical, Mechatronics, Controls, Utility, Design, Properties,
-    Radiation, Radiography, CT, MRI, Ultrasound, Dicom,
+    CT,
+    MRI,
+    Controls,
+    Design,
+    Dicom,
+    Dynamics,
+    Electrical,
+    Fluids,
+    Gear,
+    Material,
+    Mechatronics,
+    Modal,
+    Properties,
+    Radiation,
+    Radiography,
+    Statics,
+    Thermo,
+    Ultrasound,
+    Utility,
 )
 
 
@@ -94,8 +110,7 @@ class Session:
         """
         source = source.strip()
         if not source:
-            return {"label": None, "command": "", "value": None,
-                    "output": "", "error": None}
+            return {"label": None, "command": "", "value": None, "output": "", "error": None}
 
         captured = io.StringIO()
         value_text = None
@@ -170,6 +185,7 @@ class Session:
 # require a display.
 # ---------------------------------------------------------------------------
 
+
 def launch():
     """Build and run the GUI. Returns nothing; blocks until the window closes."""
     import tkinter as tk
@@ -191,8 +207,7 @@ def launch():
             self._log(
                 "Ready. Preloaded: math, np, and dyn/statics/thermo/... "
                 "Type an expression and press Run (or Enter).\n"
-                "Example:  dyn.projectile_range(speed=20, angle_deg=45)\n"
-                + "-" * 70 + "\n"
+                "Example:  dyn.projectile_range(speed=20, angle_deg=45)\n" + "-" * 70 + "\n"
             )
 
         # --- UI construction ------------------------------------------------
@@ -215,8 +230,9 @@ def launch():
             # Session log (read-only text with a scrollbar).
             log_frame = ttk.LabelFrame(middle, text="Session log")
             log_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            self.log = tk.Text(log_frame, wrap=tk.WORD, height=20,
-                               font=("monospace", 10), state=tk.DISABLED)
+            self.log = tk.Text(
+                log_frame, wrap=tk.WORD, height=20, font=("monospace", 10), state=tk.DISABLED
+            )
             log_scroll = ttk.Scrollbar(log_frame, command=self.log.yview)
             self.log.configure(yscrollcommand=log_scroll.set)
             log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -226,7 +242,10 @@ def launch():
             ws_frame = ttk.LabelFrame(middle, text="Workspace")
             ws_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(8, 0))
             self.workspace = ttk.Treeview(
-                ws_frame, columns=("label", "result"), show="headings", height=20,
+                ws_frame,
+                columns=("label", "result"),
+                show="headings",
+                height=20,
             )
             self.workspace.heading("label", text="Name")
             self.workspace.heading("result", text="Result")
@@ -270,7 +289,7 @@ def launch():
             )
             if not path:
                 return
-            with open(path, "r", encoding="utf-8") as handle:
+            with open(path, encoding="utf-8") as handle:
                 text = handle.read()
             self.command.delete(0, tk.END)
             self.command.insert(0, text)
@@ -294,8 +313,9 @@ def launch():
         def _export(self, *, kind):
             """Shared logic for the two export buttons."""
             if not self.session.records:
-                messagebox.showinfo("Nothing to export",
-                                    "Run some expressions first - the workspace is empty.")
+                messagebox.showinfo(
+                    "Nothing to export", "Run some expressions first - the workspace is empty."
+                )
                 return
             extension = ".csv" if kind == "csv" else ".json"
             path = filedialog.asksaveasfilename(
@@ -320,7 +340,9 @@ def launch():
             elif result["value"] is not None:
                 self._log(f"{result['label']} = {result['value']}\n")
                 self.workspace.insert(
-                    "", tk.END, values=(result["label"], result["value"]),
+                    "",
+                    tk.END,
+                    values=(result["label"], result["value"]),
                 )
 
         def _log(self, text):

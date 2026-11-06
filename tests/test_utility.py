@@ -33,5 +33,5 @@ def test_export_csv_writes_header_and_rows(tmp_path):
 
     lines = path.read_text(encoding="utf-8").strip().splitlines()
     assert lines[0] == "material,E_GPa"
-    assert len(lines) == 3            # 1 header + 2 data rows
+    assert len(lines) == 3  # 1 header + 2 data rows
     assert "steel,200" in lines[1]

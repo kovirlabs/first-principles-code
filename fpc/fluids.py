@@ -57,10 +57,17 @@ class Fluids:
         :param velocity: flow velocity v [m/s]
         :returns: dynamic pressure [Pa]
         """
-        return 0.5 * density * velocity ** 2
+        return 0.5 * density * velocity**2
 
     def bernoulli_pressure(
-        self, *, density, velocity_1, height_1, pressure_1, velocity_2, height_2,
+        self,
+        *,
+        density,
+        velocity_1,
+        height_1,
+        pressure_1,
+        velocity_2,
+        height_2,
         gravity=GRAVITY,
     ):
         """Downstream static pressure from Bernoulli's equation.
@@ -78,12 +85,8 @@ class Fluids:
         :param gravity: gravitational acceleration [m/s^2]
         :returns: static pressure at point 2 [Pa]
         """
-        total_head = (
-            pressure_1
-            + 0.5 * density * velocity_1 ** 2
-            + density * gravity * height_1
-        )
-        return total_head - 0.5 * density * velocity_2 ** 2 - density * gravity * height_2
+        total_head = pressure_1 + 0.5 * density * velocity_1**2 + density * gravity * height_1
+        return total_head - 0.5 * density * velocity_2**2 - density * gravity * height_2
 
     def pipe_head_loss(self, *, friction_factor, length, diameter, velocity, gravity=GRAVITY):
         """Major head loss in a pipe (Darcy-Weisbach equation).
@@ -97,7 +100,7 @@ class Fluids:
         :param gravity: gravitational acceleration [m/s^2]
         :returns: head loss [m of fluid]
         """
-        return friction_factor * (length / diameter) * velocity ** 2 / (2 * gravity)
+        return friction_factor * (length / diameter) * velocity**2 / (2 * gravity)
 
     def swamee_jain_friction_factor(self, *, reynolds, relative_roughness):
         """Explicit approximation to the Colebrook friction factor (Swamee-Jain).
@@ -110,7 +113,7 @@ class Fluids:
         :param relative_roughness: pipe roughness / diameter, eps/D [-]
         :returns: Darcy friction factor f [-]
         """
-        return 0.25 / math.log10(relative_roughness / 3.7 + 5.74 / reynolds ** 0.9) ** 2
+        return 0.25 / math.log10(relative_roughness / 3.7 + 5.74 / reynolds**0.9) ** 2
 
     def colebrook_friction_factor(self, *, reynolds, relative_roughness):
         """Darcy friction factor from the Colebrook equation, solved numerically.
@@ -173,13 +176,19 @@ class Fluids:
             raise ValueError("flow, diameter, and length must be positive")
         velocity = flow / (math.pi * diameter**2 / 4)
         reynolds = self.reynolds_number(
-            density=density, velocity=velocity, length=diameter, viscosity=viscosity,
+            density=density,
+            velocity=velocity,
+            length=diameter,
+            viscosity=viscosity,
         )
         friction_factor = self.colebrook_friction_factor(
-            reynolds=reynolds, relative_roughness=roughness / diameter,
+            reynolds=reynolds,
+            relative_roughness=roughness / diameter,
         )
         head_loss = self.pipe_head_loss(
-            friction_factor=friction_factor, length=length, diameter=diameter,
+            friction_factor=friction_factor,
+            length=length,
+            diameter=diameter,
             velocity=velocity,
         )
         return {

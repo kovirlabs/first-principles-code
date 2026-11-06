@@ -47,11 +47,15 @@ def main():
     log = log.dropna()
 
     # --- 3. Group and summarize ------------------------------------------
-    summary = log.groupby("pump_id").agg(
-        mean_flow_l_s=("flow_l_s", "mean"),
-        mean_discharge_kpa=("discharge_kpa", "mean"),
-        max_bearing_temp_c=("bearing_temp_c", "max"),
-    ).round(2)
+    summary = (
+        log.groupby("pump_id")
+        .agg(
+            mean_flow_l_s=("flow_l_s", "mean"),
+            mean_discharge_kpa=("discharge_kpa", "mean"),
+            max_bearing_temp_c=("bearing_temp_c", "max"),
+        )
+        .round(2)
+    )
     print("Per-pump summary:")
     print(summary.to_string(), "\n")
 
@@ -61,7 +65,7 @@ def main():
         .groupby("pump_id")["bearing_temp_c"]
         .resample("10min")
         .mean()
-        .unstack(level="pump_id")     # one column per pump
+        .unstack(level="pump_id")  # one column per pump
     )
 
     # --- 5. Boolean mask: alarm events -----------------------------------

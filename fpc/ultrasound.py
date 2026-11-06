@@ -126,8 +126,9 @@ class Ultrasound:
         """
         return speed / (2.0 * pulse_repetition_frequency_hz) * 100.0
 
-    def doppler_shift(self, *, transmitted_frequency_mhz, velocity, angle_deg,
-                      speed=SOFT_TISSUE_SPEED):
+    def doppler_shift(
+        self, *, transmitted_frequency_mhz, velocity, angle_deg, speed=SOFT_TISSUE_SPEED
+    ):
         """Doppler frequency shift  df = 2 * f0 * v * cos(theta) / c.
 
         :param transmitted_frequency_mhz: transmitted frequency f0 [MHz]
@@ -139,8 +140,9 @@ class Ultrasound:
         f0_hz = transmitted_frequency_mhz * 1e6
         return 2.0 * f0_hz * velocity * math.cos(math.radians(angle_deg)) / speed
 
-    def doppler_velocity(self, *, transmitted_frequency_mhz, doppler_shift_hz, angle_deg,
-                         speed=SOFT_TISSUE_SPEED):
+    def doppler_velocity(
+        self, *, transmitted_frequency_mhz, doppler_shift_hz, angle_deg, speed=SOFT_TISSUE_SPEED
+    ):
         """Blood velocity from a measured Doppler shift (the inverse problem).
 
         v = df * c / (2 * f0 * cos(theta)). Because cos(theta) sits in the

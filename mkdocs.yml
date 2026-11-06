@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Evan Gress
+#
+# Documentation site built from docs/ and the library's docstrings.
+#   uv sync --group docs
+#   uv run mkdocs serve      # live preview at http://127.0.0.1:8000
+#   uv run mkdocs build --strict
+# Published to GitHub Pages by .github/workflows/docs.yml.
+
+site_name: First Principles Code
+site_description: Engineering calculations in Python, written to be read and learned from.
+repo_url: https://github.com/kovirlabs/first-principles-code
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: {icon: material/brightness-4, name: Light mode}
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            # The library's docstrings use Sphinx-style ":param x:" fields.
+            docstring_style: sphinx
+            show_source: true
+            show_root_heading: true
+            members_order: source
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.arithmatex: {generic: true}
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Units - floats or Pint?: units.md
+      - From calculation to tool: building-tools.md
+  - API reference:
+      - Mechanics:
+          - Dynamics: api/dynamics.md
+          - Statics: api/statics.md
+          - Modal (vibration): api/modal.md
+          - Material: api/material.md
+          - Beam (Pint): api/beam.md
+          - Gear: api/gear.md
+      - Thermal and fluids:
+          - Thermo: api/thermo.md
+          - Fluids: api/fluids.md
+      - Electrical and controls:
+          - Electrical: api/electrical.md
+          - Mechatronics: api/mechatronics.md
+          - Controls: api/controls.md
+      - Design and data:
+          - Design (root finding, optimization): api/design.md
+          - Properties (reference tables): api/properties.md
+          - Utility (files, tables, dialogs): api/utility.md
+          - Units registry: api/units.md
+          - fpc command line: api/cli.md
+      - Radiology:
+          - Radiation: api/radiation.md
+          - Radiography: api/radiography.md
+          - CT: api/ct.md
+          - MRI: api/mri.md
+          - Ultrasound: api/ultrasound.md
+          - Dicom: api/dicom.md

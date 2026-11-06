@@ -22,33 +22,33 @@ reads as a self-contained, well-documented worked example.
 # Re-export the domain classes so callers can also write
 # ``from fpc import Dynamics``. Keeping this list in one place documents
 # everything the library currently offers.
-from fpc.dynamics import Dynamics
-from fpc.statics import Statics
-from fpc.modal import Modal
-from fpc.thermo import Thermo
-from fpc.fluids import Fluids
-from fpc.material import Material
-from fpc.gear import Gear
-from fpc.electrical import Electrical
-from fpc.mechatronics import Mechatronics
+from fpc.beam import Beam
 from fpc.controls import Controls
-from fpc.utility import Utility
+from fpc.ct import CT
 
 # Design (root finding / optimization) and reference-data lookups.
 from fpc.design import Design
+from fpc.dicom import Dicom
+from fpc.dynamics import Dynamics
+from fpc.electrical import Electrical
+from fpc.fluids import Fluids
+from fpc.gear import Gear
+from fpc.material import Material
+from fpc.mechatronics import Mechatronics
+from fpc.modal import Modal
+from fpc.mri import MRI
 from fpc.properties import Properties
 
 # Medical imaging / radiology classes.
 from fpc.radiation import Radiation
 from fpc.radiography import Radiography
-from fpc.ct import CT
-from fpc.mri import MRI
+from fpc.statics import Statics
+from fpc.thermo import Thermo
 from fpc.ultrasound import Ultrasound
-from fpc.dicom import Dicom
 
 # Unit-aware modelling: the shared Pint registry and the Beam dataclass.
-from fpc.units import ureg, Q_
-from fpc.beam import Beam
+from fpc.units import Q_, ureg
+from fpc.utility import Utility
 
 __all__ = [
     "Dynamics",

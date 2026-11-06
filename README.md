@@ -152,12 +152,12 @@ for case in launches:
 
 # --- A dictionary that maps a name to a configured object/result ---
 materials = {
-    "steel":    200e9,   # Young's modulus [Pa]
-    "aluminum":  69e9,
+    "steel": 200e9,  # Young's modulus [Pa]
+    "aluminum": 69e9,
     "titanium": 114e9,
 }
 for name, modulus in materials.items():
-    print(f"{name:>9}: E = {modulus/1e9:.0f} GPa")
+    print(f"{name:>9}: E = {modulus / 1e9:.0f} GPa")
 ```
 
 ### Conditional flow control and loops
@@ -179,8 +179,7 @@ print(f"Re = {re:.0f} -> {regime}")
 
 # while loop: increase velocity until the flow turns turbulent
 velocity = 0.01
-while fluids.reynolds_number(density=1000, velocity=velocity,
-                             length=0.05, viscosity=1e-3) < 4000:
+while fluids.reynolds_number(density=1000, velocity=velocity, length=0.05, viscosity=1e-3) < 4000:
     velocity += 0.01
 print(f"Flow becomes turbulent at about {velocity:.2f} m/s")
 ```
@@ -192,8 +191,8 @@ and for telling other functions *how* to behave (sorting, mapping, filtering).
 
 ```python
 # 1. A throwaway formula you can call like any function
-kinetic_energy = lambda mass, velocity: 0.5 * mass * velocity ** 2
-print(kinetic_energy(2.0, 3.0))          # -> 9.0
+kinetic_energy = lambda mass, velocity: 0.5 * mass * velocity**2
+print(kinetic_energy(2.0, 3.0))  # -> 9.0
 
 # 2. As a sort key: order parts by stress, highest first
 parts = [("bracket", 120e6), ("pin", 240e6), ("plate", 80e6)]
@@ -201,7 +200,7 @@ parts.sort(key=lambda part: part[1], reverse=True)
 
 # 3. With map/filter: convert a list of Celsius temps to Kelvin
 celsius = [0, 25, 100]
-kelvin = list(map(lambda c: c + 273.15, celsius))   # [273.15, 298.15, 373.15]
+kelvin = list(map(lambda c: c + 273.15, celsius))  # [273.15, 298.15, 373.15]
 ```
 
 ---
@@ -214,21 +213,21 @@ A `Beam` knows its own geometry and computes its structural behaviour — and th
 units make the math self-checking.
 
 ```python
-from fpc.units import Q_       # Q_(value, "unit") builds a quantity
+from fpc.units import Q_  # Q_(value, "unit") builds a quantity
 from fpc.beam import Beam
 
 beam = Beam(
     length=Q_(2.0, "m"),
     width=Q_(50, "mm"),
     height=Q_(100, "mm"),
-    modulus=Q_(200, "GPa"),         # defaults to structural steel if omitted
+    modulus=Q_(200, "GPa"),  # defaults to structural steel if omitted
 )
 
-beam.moment_of_inertia.to("mm**4")                       # 4.17e6 mm^4
-beam.mass.to("kg")                                       # 78.5 kg
-beam.max_deflection_point_load(load=Q_(5, "kN")).to("mm")    # 1.0 mm
+beam.moment_of_inertia.to("mm**4")  # 4.17e6 mm^4
+beam.mass.to("kg")  # 78.5 kg
+beam.max_deflection_point_load(load=Q_(5, "kN")).to("mm")  # 1.0 mm
 beam.max_bending_stress_point_load(load=Q_(5, "kN")).to("MPa")  # 30 MPa
-beam.euler_buckling_load().to("kN")                      # 514 kN
+beam.euler_buckling_load().to("kN")  # 514 kN
 ```
 
 Why units are worth it:
@@ -255,12 +254,16 @@ Two SciPy workhorses show up where formulas run out:
 
 ```python
 from fpc.modal import Modal
+
 modal = Modal()
 
 # Simulate a known oscillator...
 t, x = modal.simulate_free_vibration(
-    mass=2.0, stiffness=800.0, damping=8.0,
-    initial_displacement=0.01, duration=5.0,
+    mass=2.0,
+    stiffness=800.0,
+    damping=8.0,
+    initial_displacement=0.01,
+    duration=5.0,
 )
 # ...then fit the response and recover the inputs (~3.18 Hz, zeta ~0.10).
 modal.fit_damped_response(time=t, displacement=x, guess_frequency_hz=3.0)
@@ -287,19 +290,19 @@ slice in abdomen, lung, and bone windows.
 | `Dicom` | `fpc/dicom.py` | Read DICOM with pydicom, summarize technical tags, pixels in HU, pixel spacing, basic de-identification, PNG export |
 
 ```python
-from pydicom.data import get_testdata_file   # sample images, no patient data
+from pydicom.data import get_testdata_file  # sample images, no patient data
 from fpc import CT, Dicom, Radiography, Radiation
 
 radiation = Radiation()
-radiation.effective_dose(organ_equivalent_doses={"thyroid": 10.0})   # -> 0.4 mSv
+radiation.effective_dose(organ_equivalent_doses={"thyroid": 10.0})  # -> 0.4 mSv
 
 Radiography().exposure_maintenance_mas(original_mas=10, original_sid=100, new_sid=180)  # 32.4
 
 dicom, ct = Dicom(), CT()
 ds = dicom.read(path=get_testdata_file("CT_small.dcm"))
-hu = dicom.pixel_array_in_units(dataset=ds)          # stored values -> Hounsfield units
-lung = ct.apply_window(hounsfield=hu, preset="lung") # whole slice windowed in one call
-safe = dicom.anonymize(dataset=ds)                   # blank PHI before sharing
+hu = dicom.pixel_array_in_units(dataset=ds)  # stored values -> Hounsfield units
+lung = ct.apply_window(hounsfield=hu, preset="lung")  # whole slice windowed in one call
+safe = dicom.anonymize(dataset=ds)  # blank PHI before sharing
 ```
 
 > **Teaching use only.** These are textbook calculations for learning. They

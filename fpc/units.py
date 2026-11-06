@@ -19,8 +19,10 @@ registry. So the project defines exactly one here and everything imports it::
 
 from pint import UnitRegistry
 
-# The single registry shared across the project.
-ureg = UnitRegistry()
+# The single registry shared across the project. The annotation tells type
+# checkers (mypy, your editor) what this object is; UnitRegistry is generic,
+# so a bare ``UnitRegistry()`` leaves them guessing.
+ureg: UnitRegistry = UnitRegistry()
 
 # ``Q_`` is the conventional short alias for building a quantity from a value
 # and a unit string, e.g. ``Q_(200, "GPa")``.

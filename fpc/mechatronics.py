@@ -62,7 +62,7 @@ class Mechatronics:
         :param gear_ratio: gear reduction ratio [-]
         :returns: reflected inertia at the motor shaft [kg*m^2]
         """
-        return load_inertia / gear_ratio ** 2
+        return load_inertia / gear_ratio**2
 
     def acceleration_torque(self, *, inertia, angular_acceleration):
         """Torque to angularly accelerate an inertia: T = J * alpha.
@@ -75,7 +75,18 @@ class Mechatronics:
         """
         return inertia * angular_acceleration
 
-    def calculate_inertia_ratio(self, *, j_motor, mass, pitch, teeth_motor_pulley, teeth_screw_pulley, j_screw, j_pulley_motor, j_pulley_screw):
+    def calculate_inertia_ratio(
+        self,
+        *,
+        j_motor,
+        mass,
+        pitch,
+        teeth_motor_pulley,
+        teeth_screw_pulley,
+        j_screw,
+        j_pulley_motor,
+        j_pulley_screw,
+    ):
         """
         Calculates the inertia ratio of a servomotor driving a ballscrew via a timing belt.
 
@@ -115,7 +126,9 @@ class Mechatronics:
             "reduction_ratio": reduction_ratio,
         }
 
-    def _calculate_acceleration_torque(self, *, j_total, j_motor, linear_acceleration, pitch, reduction_ratio):
+    def _calculate_acceleration_torque(
+        self, *, j_total, j_motor, linear_acceleration, pitch, reduction_ratio
+    ):
         """
         Uses linear acceleration to find the required motor acceleration torque.
 

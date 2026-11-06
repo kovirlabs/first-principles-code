@@ -43,7 +43,7 @@ class Controls:
         :returns: required damping ratio zeta [-]
         """
         ln_os = math.log(percent_overshoot / 100.0)
-        return -ln_os / math.sqrt(math.pi ** 2 + ln_os ** 2)
+        return -ln_os / math.sqrt(math.pi**2 + ln_os**2)
 
     def settling_time(self, *, damping_ratio, natural_frequency, tolerance=0.02):
         """Approximate settling time of a second-order system.
@@ -59,8 +59,16 @@ class Controls:
         return -math.log(tolerance) / (damping_ratio * natural_frequency)
 
     def simulate_pid_first_order(
-        self, *, setpoint, time_constant, gain, kp, ki=0.0, kd=0.0,
-        dt=0.01, duration=10.0,
+        self,
+        *,
+        setpoint,
+        time_constant,
+        gain,
+        kp,
+        ki=0.0,
+        kd=0.0,
+        dt=0.01,
+        duration=10.0,
     ):
         """Simulate a PID loop controlling a first-order plant.
 
@@ -82,8 +90,8 @@ class Controls:
         time = np.linspace(0.0, duration, steps)
         output = np.zeros(steps)
 
-        integral = 0.0          # running sum of error*dt
-        previous_error = 0.0    # for the derivative term
+        integral = 0.0  # running sum of error*dt
+        previous_error = 0.0  # for the derivative term
 
         # March forward one time step at a time.
         for i in range(1, steps):
@@ -93,8 +101,12 @@ class Controls:
 
             # Controller decides the command u from the current error state.
             command = self.pid_output(
-                error=error, integral=integral, derivative=derivative,
-                kp=kp, ki=ki, kd=kd,
+                error=error,
+                integral=integral,
+                derivative=derivative,
+                kp=kp,
+                ki=ki,
+                kd=kd,
             )
 
             # Plant responds: Euler step of  y' = (gain*u - y) / tau.

@@ -55,7 +55,8 @@ def main():
 
     output = tk.StringVar(value="Press Calculate")
     ttk.Label(frame, textvariable=output, justify="left").grid(
-        row=len(FIELDS) + 1, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        row=len(FIELDS) + 1, column=0, columnspan=2, sticky="w", pady=(8, 0)
+    )
 
     def on_calculate():
         # Never trust typed input: a GUI must handle "abc" gracefully.
@@ -65,13 +66,16 @@ def main():
         except ValueError as error:
             output.set(f"Input error: {error}")
             return
-        output.set(f"Velocity: {r['velocity']:.2f} m/s\n"
-                   f"Reynolds: {r['reynolds']:.0f}\n"
-                   f"Friction factor: {r['friction_factor']:.4f}\n"
-                   f"Pressure drop: {r['pressure_drop'] / 1000:.2f} kPa")
+        output.set(
+            f"Velocity: {r['velocity']:.2f} m/s\n"
+            f"Reynolds: {r['reynolds']:.0f}\n"
+            f"Friction factor: {r['friction_factor']:.4f}\n"
+            f"Pressure drop: {r['pressure_drop'] / 1000:.2f} kPa"
+        )
 
     ttk.Button(frame, text="Calculate", command=on_calculate).grid(
-        row=len(FIELDS), column=0, columnspan=2, pady=(8, 0))
+        row=len(FIELDS), column=0, columnspan=2, pady=(8, 0)
+    )
     root.mainloop()
 
 

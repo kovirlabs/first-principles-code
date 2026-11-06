@@ -9,11 +9,11 @@ of a ladder. Each rung is a working file you can run.
 
 | Rung | File | Who can use it | Effort |
 | --- | --- | --- | --- |
-| 1. Script | [`examples/tools/step1_script.py`](../examples/tools/step1_script.py) | You | Minutes |
-| 2. Command line | [`examples/tools/step2_cli.py`](../examples/tools/step2_cli.py) | Anyone with a terminal, other programs | + 20 lines |
-| 3. Desktop GUI | [`examples/tools/step3_gui.py`](../examples/tools/step3_gui.py) | Colleagues who avoid terminals | + 60 lines |
-| 4. Web app | [`examples/tools/step4_web_app.py`](../examples/tools/step4_web_app.py) | Anyone with a link | + 50 lines and a server |
-| 5. Installed command | [`fpc/cli.py`](../fpc/cli.py) + `[project.scripts]` | Anyone who installs the package | + 5 lines of config |
+| 1. Script | [`examples/tools/step1_script.py`](https://github.com/kovirlabs/first-principles-code/blob/main/examples/tools/step1_script.py) | You | Minutes |
+| 2. Command line | [`examples/tools/step2_cli.py`](https://github.com/kovirlabs/first-principles-code/blob/main/examples/tools/step2_cli.py) | Anyone with a terminal, other programs | + 20 lines |
+| 3. Desktop GUI | [`examples/tools/step3_gui.py`](https://github.com/kovirlabs/first-principles-code/blob/main/examples/tools/step3_gui.py) | Colleagues who avoid terminals | + 60 lines |
+| 4. Web app | [`examples/tools/step4_web_app.py`](https://github.com/kovirlabs/first-principles-code/blob/main/examples/tools/step4_web_app.py) | Anyone with a link | + 50 lines and a server |
+| 5. Installed command | [`fpc/cli.py`](https://github.com/kovirlabs/first-principles-code/blob/main/fpc/cli.py) + `[project.scripts]` | Anyone who installs the package | + 5 lines of config |
 
 **The rule that makes the ladder cheap:** the engineering lives in the library
 (`Fluids.pipe_flow`), and every rung is a thin front end that collects inputs,
@@ -34,7 +34,7 @@ one-off answer and for exploring. You have outgrown it when you catch yourself
 editing the file to run a second case, or copying it to make `_v2`.
 
 For a fuller starting point (inputs dict, report, plot, CSV export), copy
-[`templates/engineering_script.py`](../templates/engineering_script.py).
+[`templates/engineering_script.py`](https://github.com/kovirlabs/first-principles-code/blob/main/templates/engineering_script.py).
 
 ## Rung 2: command-line tool (`argparse`)
 
@@ -66,7 +66,7 @@ from a `FIELDS` dict: adding an input is one line. The essential GUI habit is
 **handling bad input**. Typed text might be `"abc"`, so the button handler
 catches `ValueError` and shows a message instead of crashing.
 
-The project's [`gui.py`](../gui.py) is the open-ended version: a MATLAB-style
+The project's [`gui.py`](https://github.com/kovirlabs/first-principles-code/blob/main/gui.py) is the open-ended version: a MATLAB-style
 console where you type any expression. Use a form like this one when users
 need one specific calculation.
 
@@ -89,7 +89,7 @@ engineering data on a public host.
 ## Rung 5: installed command (`[project.scripts]`)
 
 The final step turns the tool into a command that installs with the package.
-[`fpc/cli.py`](../fpc/cli.py) is rung 2 moved *inside* the package and extended
+[`fpc/cli.py`](https://github.com/kovirlabs/first-principles-code/blob/main/fpc/cli.py) is rung 2 moved *inside* the package and extended
 with subcommands. One table in `pyproject.toml` registers it:
 
 ```toml
@@ -114,7 +114,7 @@ fpc water --temperature-c 37
   [PyInstaller](https://pyinstaller.org/) bundles a script and its
   dependencies (`uvx pyinstaller --onefile examples/tools/step3_gui.py`).
   Expect large files and test on the target operating system.
-- **Notebooks** ([`notebooks/`](../notebooks/)) are a different kind of tool:
+- **Notebooks** ([`notebooks/`](https://github.com/kovirlabs/first-principles-code/tree/main/notebooks)) are a different kind of tool:
   a calculation and its explanation in one shareable document.
 - **Reuse in another project:** see "Use this library in your own project" in
   the README.

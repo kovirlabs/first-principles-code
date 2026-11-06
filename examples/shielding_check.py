@@ -41,24 +41,32 @@ def main():
     print(f"Target transmission: {TARGET_TRANSMISSION:g} at 100 keV\n")
     for name, (mass_mu, density) in MATERIALS.items():
         mu = radiation.linear_attenuation_coefficient(
-            mass_attenuation_coefficient=mass_mu, density=density,
+            mass_attenuation_coefficient=mass_mu,
+            density=density,
         )
         thickness = radiation.shielding_thickness(
-            attenuation_coefficient=mu, transmission=TARGET_TRANSMISSION,
+            attenuation_coefficient=mu,
+            transmission=TARGET_TRANSMISSION,
         )
         hvl = radiation.half_value_layer(attenuation_coefficient=mu)
         tvl = radiation.tenth_value_layer(attenuation_coefficient=mu)
-        print(f"{name:>18}: mu = {mu:6.2f} /cm, HVL = {hvl * 10:6.2f} mm, "
-              f"TVL = {tvl * 10:6.2f} mm -> {thickness * 10:7.1f} mm needed")
+        print(
+            f"{name:>18}: mu = {mu:6.2f} /cm, HVL = {hvl * 10:6.2f} mm, "
+            f"TVL = {tvl * 10:6.2f} mm -> {thickness * 10:7.1f} mm needed"
+        )
 
     # Distance is free shielding: doubling it cuts intensity to a quarter.
     relative = radiation.inverse_square_law(
-        initial_intensity=1.0, initial_distance=2.0, new_distance=4.0,
+        initial_intensity=1.0,
+        initial_distance=2.0,
+        new_distance=4.0,
     )
     # Each HVL halves the intensity, so a factor of 1/relative is log2 of it HVLs.
     equivalent_hvls = math.log2(1 / relative)
-    print(f"\nMoving from 2 m to 4 m leaves {relative:.0%} of the intensity "
-          f"- the same as adding {equivalent_hvls:.0f} HVLs of shielding.")
+    print(
+        f"\nMoving from 2 m to 4 m leaves {relative:.0%} of the intensity "
+        f"- the same as adding {equivalent_hvls:.0f} HVLs of shielding."
+    )
 
 
 if __name__ == "__main__":

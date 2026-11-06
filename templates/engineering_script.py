@@ -42,11 +42,11 @@ from fpc import Utility
 # --- 1. INPUTS --------------------------------------------------------------
 # Put units in every key. A bare "length" invites someone to type inches.
 INPUTS = {
-    "length_m": 1.5,             # cantilever length
-    "tip_load_n": 800.0,         # point load at the free end
-    "modulus_pa": 200e9,         # Young's modulus (steel)
-    "width_m": 0.04,             # rectangular section width
-    "height_m": 0.06,            # rectangular section height
+    "length_m": 1.5,  # cantilever length
+    "tip_load_n": 800.0,  # point load at the free end
+    "modulus_pa": 200e9,  # Young's modulus (steel)
+    "width_m": 0.04,  # rectangular section width
+    "height_m": 0.06,  # rectangular section height
     "allowable_deflection_m": 0.008,
 }
 
@@ -56,8 +56,9 @@ OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
 
 # --- 2. CALCULATE -----------------------------------------------------------
-def calculate(*, length_m, tip_load_n, modulus_pa, width_m, height_m,
-              allowable_deflection_m, points=50):
+def calculate(
+    *, length_m, tip_load_n, modulus_pa, width_m, height_m, allowable_deflection_m, points=50
+):
     """Deflection along a cantilever with a tip load.
 
     Replace this with your own calculation. Keep it *pure*: inputs in, results
@@ -75,12 +76,12 @@ def calculate(*, length_m, tip_load_n, modulus_pa, width_m, height_m,
     :param points: number of points along the beam to evaluate
     :returns: dict of results (scalars and arrays)
     """
-    moment_of_inertia = width_m * height_m**3 / 12          # [m^4]
+    moment_of_inertia = width_m * height_m**3 / 12  # [m^4]
     # NumPy evaluates the formula at every x at once (no loop needed).
-    x = np.linspace(0.0, length_m, points)                   # [m]
+    x = np.linspace(0.0, length_m, points)  # [m]
     deflection = tip_load_n * x**2 * (3 * length_m - x) / (6 * modulus_pa * moment_of_inertia)
 
-    tip_deflection = deflection[-1]                          # last point = the tip
+    tip_deflection = deflection[-1]  # last point = the tip
     return {
         "x_m": x,
         "deflection_m": deflection,
@@ -114,8 +115,9 @@ def plot(*, inputs, results, save_path):
     """Save a figure of the result - usually the real deliverable."""
     figure, axis = plt.subplots(figsize=(7, 4))
     axis.plot(results["x_m"], results["deflection_m"] * 1000, label="deflection")
-    axis.axhline(inputs["allowable_deflection_m"] * 1000, color="red",
-                 linestyle="--", label="allowable")
+    axis.axhline(
+        inputs["allowable_deflection_m"] * 1000, color="red", linestyle="--", label="allowable"
+    )
     axis.set_xlabel("Distance from wall [m]")
     axis.set_ylabel("Deflection [mm]")
     axis.set_title("Cantilever deflection")
@@ -133,9 +135,12 @@ def export(*, inputs, results):
     utility = Utility()
     utility.dict_to_json(data=inputs, file_path=OUTPUT_DIR / "inputs.json")
     # zip pairs the arrays up row by row: (x0, y0), (x1, y1), ...
-    rows = zip(results["x_m"], results["deflection_m"])
-    utility.export_csv(rows=rows, file_path=OUTPUT_DIR / "results.csv",
-                       header=["x_m", "deflection_m"])
+    # strict=True raises if the arrays differ in length instead of silently
+    # dropping the extra values.
+    rows = zip(results["x_m"], results["deflection_m"], strict=True)
+    utility.export_csv(
+        rows=rows, file_path=OUTPUT_DIR / "results.csv", header=["x_m", "deflection_m"]
+    )
     plot(inputs=inputs, results=results, save_path=OUTPUT_DIR / "results.png")
     print(f"\n  Wrote inputs.json, results.csv, results.png to {OUTPUT_DIR}")
 
@@ -145,6 +150,6 @@ def export(*, inputs, results):
 # (e.g. from a test or another script) gives you calculate() without
 # running the whole thing.
 if __name__ == "__main__":
-    results = calculate(**INPUTS)   # ** unpacks the dict into keyword arguments
+    results = calculate(**INPUTS)  # ** unpacks the dict into keyword arguments
     report(inputs=INPUTS, results=results)
     export(inputs=INPUTS, results=results)

@@ -26,10 +26,15 @@ def build_parser():
     parser.add_argument("--flow-l-s", type=float, required=True, help="flow rate [L/s]")
     parser.add_argument("--diameter-mm", type=float, required=True, help="inner diameter [mm]")
     parser.add_argument("--length-m", type=float, required=True, help="pipe length [m]")
-    parser.add_argument("--roughness-mm", type=float, default=0.045,
-                        help="absolute roughness [mm] (default: commercial steel 0.045)")
-    parser.add_argument("--temperature-c", type=float, default=20.0,
-                        help="water temperature [degC] (default: 20)")
+    parser.add_argument(
+        "--roughness-mm",
+        type=float,
+        default=0.045,
+        help="absolute roughness [mm] (default: commercial steel 0.045)",
+    )
+    parser.add_argument(
+        "--temperature-c", type=float, default=20.0, help="water temperature [degC] (default: 20)"
+    )
     return parser
 
 
@@ -45,10 +50,10 @@ def main(argv=None):
         diameter=args.diameter_mm / 1000,
         length=args.length_m,
         roughness=args.roughness_mm / 1000,
-        density=props.water_liquid(temperature_c=args.temperature_c,
-                                   property="density_kg_m3"),
-        viscosity=props.water_liquid(temperature_c=args.temperature_c,
-                                     property="dynamic_viscosity_pa_s"),
+        density=props.water_liquid(temperature_c=args.temperature_c, property="density_kg_m3"),
+        viscosity=props.water_liquid(
+            temperature_c=args.temperature_c, property="dynamic_viscosity_pa_s"
+        ),
     )
     print(f"velocity        {result['velocity']:.3f} m/s")
     print(f"Reynolds        {result['reynolds']:.0f}")

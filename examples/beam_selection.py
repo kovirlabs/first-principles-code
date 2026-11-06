@@ -25,16 +25,16 @@ braced compact section. A real design follows AISC 360 in full.
 Run it:  uv run examples/beam_selection.py
 """
 
-from fpc import Properties, Q_
+from fpc import Q_, Properties
 
 props = Properties()
 
 # --- Inputs (each one carries its units) ----------------------------------
 span = Q_(6.0, "m")
 load = Q_(40.0, "kN")
-yield_strength = Q_(345, "MPa")          # ASTM A992 steel, Fy = 50 ksi
+yield_strength = Q_(345, "MPa")  # ASTM A992 steel, Fy = 50 ksi
 modulus = Q_(200, "GPa")
-deflection_limit = span / 360            # serviceability limit L/360
+deflection_limit = span / 360  # serviceability limit L/360
 
 
 def deflection(*, section):
@@ -54,14 +54,14 @@ def main():
 
     # Strength check: the lightest section with enough Sx.
     section = props.lightest_w_shape(required_sx_in3=required_sx.magnitude)
-    print(f"Lightest for strength: {section['designation']} "
-          f"(Sx = {section['sx_in3']} in^3)")
+    print(f"Lightest for strength: {section['designation']} (Sx = {section['sx_in3']} in^3)")
 
     # Serviceability check: does it also meet the deflection limit?
     # If not, walk up the catalogue until one does. Sort exactly like
     # lightest_w_shape: by weight, and for equal weights the stronger first.
     shapes = props.load_table(name="w_shapes").sort_values(
-        ["weight_lb_ft", "sx_in3"], ascending=[True, False],
+        ["weight_lb_ft", "sx_in3"],
+        ascending=[True, False],
     )
     strong_enough = shapes[shapes["sx_in3"] >= required_sx.magnitude]
     for _, candidate in strong_enough.iterrows():
@@ -70,8 +70,7 @@ def main():
         print(f"  {candidate['designation']:>7}: deflection {delta:.1f~P}  -> {status}")
         if delta <= deflection_limit:
             weight = Q_(candidate["weight_lb_ft"], "lbf/ft").to("kgf/m")
-            print(f"\nSelected: {candidate['designation']} "
-                  f"({weight.magnitude:.1f} kg/m)")
+            print(f"\nSelected: {candidate['designation']} ({weight.magnitude:.1f} kg/m)")
             return
     print("\nNo section in the table passes - extend data/w_shapes.csv.")
 

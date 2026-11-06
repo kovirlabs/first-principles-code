@@ -70,8 +70,8 @@ class Radiography:
         :param steps: number of 15% adjustments (+ raises kVp, - lowers it)
         :returns: tuple (new kVp, new mAs)
         """
-        new_kvp = kvp * 1.15 ** steps
-        new_mas = mas / 2 ** steps
+        new_kvp = kvp * 1.15**steps
+        new_mas = mas / 2**steps
         return new_kvp, new_mas
 
     def exposure_maintenance_mas(self, *, original_mas, original_sid, new_sid):
@@ -104,8 +104,9 @@ class Radiography:
                 raise ValueError(f"unknown grid {grid!r}; use one of: {', '.join(factors)}")
         return original_mas * factors[new_grid] / factors[original_grid]
 
-    def heat_units(self, *, kvp, tube_current_ma, exposure_time_s, generator="high_frequency",
-                   exposures=1):
+    def heat_units(
+        self, *, kvp, tube_current_ma, exposure_time_s, generator="high_frequency", exposures=1
+    ):
         """Anode heat load in heat units:  HU = kVp * mA * s * C * exposures.
 
         Used with the tube rating chart to check a series of exposures (e.g. a

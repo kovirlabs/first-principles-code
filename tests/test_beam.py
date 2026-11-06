@@ -11,8 +11,8 @@ Also checks that bad inputs raise, and that Pint blocks nonsensical unit math.
 import pytest
 from pint import DimensionalityError
 
-from fpc.units import Q_
 from fpc.beam import Beam
+from fpc.units import Q_
 
 
 def make_beam():

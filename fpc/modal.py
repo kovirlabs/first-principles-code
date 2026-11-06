@@ -63,7 +63,7 @@ class Modal:
         """
         omega_n, _ = self.natural_frequency(stiffness=stiffness, mass=mass)
         zeta = self.damping_ratio(damping=damping, mass=mass, stiffness=stiffness)
-        return omega_n * math.sqrt(1 - zeta ** 2)
+        return omega_n * math.sqrt(1 - zeta**2)
 
     def mode_shapes(self, *, mass_matrix, stiffness_matrix):
         """Natural frequencies and mode shapes of a multi-DOF system.
@@ -93,8 +93,15 @@ class Modal:
         return frequencies_hz[order], eigenvectors[:, order]
 
     def simulate_free_vibration(
-        self, *, mass, stiffness, damping, initial_displacement,
-        initial_velocity=0.0, duration, num_points=500,
+        self,
+        *,
+        mass,
+        stiffness,
+        damping,
+        initial_displacement,
+        initial_velocity=0.0,
+        duration,
+        num_points=500,
     ):
         """Simulate the free ring-down of an SDOF spring-mass-damper.
 
@@ -112,6 +119,7 @@ class Modal:
         :param num_points: number of evenly spaced output samples
         :returns: tuple of numpy arrays (time [s], displacement [m])
         """
+
         def equations_of_motion(t, state):
             """d/dt of [x, v] for  x' = v,  v' = -(c*v + k*x)/m."""
             x, v = state
@@ -152,15 +160,15 @@ class Modal:
         displacement = np.asarray(displacement, dtype=float)
 
         def model(t, amplitude, zeta, omega_n, phase):
-            omega_d = omega_n * np.sqrt(1 - zeta ** 2)
+            omega_d = omega_n * np.sqrt(1 - zeta**2)
             return amplitude * np.exp(-zeta * omega_n * t) * np.cos(omega_d * t + phase)
 
         # A good initial guess (p0) is what makes nonlinear fitting converge.
         initial_guess = [
-            float(np.max(np.abs(displacement))),   # amplitude
-            0.05,                                   # lightly damped
-            2 * math.pi * guess_frequency_hz,       # angular frequency
-            0.0,                                    # phase
+            float(np.max(np.abs(displacement))),  # amplitude
+            0.05,  # lightly damped
+            2 * math.pi * guess_frequency_hz,  # angular frequency
+            0.0,  # phase
         ]
         params, _covariance = curve_fit(model, time, displacement, p0=initial_guess)
         amplitude, zeta, omega_n, _phase = params

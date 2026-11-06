@@ -16,7 +16,6 @@ results compose easily with numpy and scipy.
 
 import math
 
-import numpy as np
 from scipy.integrate import solve_ivp
 
 
@@ -44,11 +43,7 @@ class Dynamics:
         :param time: elapsed time t [s]
         :returns: position x at time t [m]
         """
-        return (
-            initial_position
-            + initial_velocity * time
-            + 0.5 * acceleration * time ** 2
-        )
+        return initial_position + initial_velocity * time + 0.5 * acceleration * time**2
 
     def final_velocity(self, *, initial_velocity, acceleration, time):
         """Velocity after constant acceleration: v = v0 + a*t.
@@ -71,7 +66,7 @@ class Dynamics:
         :returns: final speed v [m/s] (always non-negative)
         """
         # max(..., 0.0) guards against tiny negative values from rounding.
-        return math.sqrt(max(initial_velocity ** 2 + 2 * acceleration * distance, 0.0))
+        return math.sqrt(max(initial_velocity**2 + 2 * acceleration * distance, 0.0))
 
     def projectile_range(self, *, speed, angle_deg, gravity=GRAVITY):
         """Horizontal range of a projectile launched over flat ground.
@@ -85,7 +80,7 @@ class Dynamics:
         """
         # Trig functions in ``math`` expect radians, so convert first.
         angle_rad = math.radians(angle_deg)
-        return speed ** 2 * math.sin(2 * angle_rad) / gravity
+        return speed**2 * math.sin(2 * angle_rad) / gravity
 
     def projectile_time_of_flight(self, *, speed, angle_deg, gravity=GRAVITY):
         """Time a projectile spends in the air over flat ground.
@@ -116,7 +111,7 @@ class Dynamics:
         :param velocity: speed [m/s]
         :returns: kinetic energy [J]
         """
-        return 0.5 * mass * velocity ** 2
+        return 0.5 * mass * velocity**2
 
     def momentum(self, *, mass, velocity):
         """Linear momentum: p = m*v.
@@ -134,11 +129,19 @@ class Dynamics:
         :param radius: radius of the circular path [m]
         :returns: centripetal acceleration [m/s^2]
         """
-        return speed ** 2 / radius
+        return speed**2 / radius
 
     def simulate_projectile_drag(
-        self, *, speed, angle_deg, mass, drag_coefficient, frontal_area,
-        air_density=1.225, gravity=GRAVITY, max_time=60.0,
+        self,
+        *,
+        speed,
+        angle_deg,
+        mass,
+        drag_coefficient,
+        frontal_area,
+        air_density=1.225,
+        gravity=GRAVITY,
+        max_time=60.0,
     ):
         """Simulate 2-D projectile flight WITH quadratic air drag.
 
@@ -193,7 +196,7 @@ class Dynamics:
             t_span=(0.0, max_time),
             y0=[0.0, 0.0, vx0, vy0],
             events=hit_ground,
-            max_step=0.01,          # small steps keep the trajectory smooth
+            max_step=0.01,  # small steps keep the trajectory smooth
             dense_output=False,
         )
 

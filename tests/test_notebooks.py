@@ -22,6 +22,8 @@ def test_notebook_executes(path):
     notebook = nbformat.read(path, as_version=4)
     # Run with the notebooks folder as the working directory, like Jupyter does.
     nbclient.NotebookClient(
-        notebook, timeout=120, kernel_name="python3",
+        notebook,
+        timeout=120,
+        kernel_name="python3",
         resources={"metadata": {"path": str(path.parent)}},
     ).execute()

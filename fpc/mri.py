@@ -78,8 +78,16 @@ class MRI:
         """
         return initial_magnetization * math.exp(-time_ms / t2_ms)
 
-    def spin_echo_signal(self, *, repetition_time_ms, echo_time_ms, t1_ms=None, t2_ms=None,
-                         proton_density=1.0, tissue=None):
+    def spin_echo_signal(
+        self,
+        *,
+        repetition_time_ms,
+        echo_time_ms,
+        t1_ms=None,
+        t2_ms=None,
+        proton_density=1.0,
+        tissue=None,
+    ):
         """Relative spin-echo signal  S = PD * (1 - exp(-TR/T1)) * exp(-TE/T2).
 
         TR controls how much T1 recovery happens between pulses; TE controls

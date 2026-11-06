@@ -121,8 +121,11 @@ class Properties:
         :returns: the property value in the units named by the column
         """
         return self.interpolate(
-            table="water_saturation", x_column="temperature_c",
-            y_column=property, x=temperature_c, method=method,
+            table="water_saturation",
+            x_column="temperature_c",
+            y_column=property,
+            x=temperature_c,
+            method=method,
         )
 
     def water_liquid(self, *, temperature_c, property, method="linear"):
@@ -137,8 +140,11 @@ class Properties:
         :returns: the property value in the units named by the column
         """
         return self.interpolate(
-            table="water_liquid_1atm", x_column="temperature_c",
-            y_column=property, x=temperature_c, method=method,
+            table="water_liquid_1atm",
+            x_column="temperature_c",
+            y_column=property,
+            x=temperature_c,
+            method=method,
         )
 
     # --- Row lookups ------------------------------------------------------
@@ -172,9 +178,7 @@ class Properties:
         if candidates.empty:
             raise ValueError(f"no W-shape in the table has Sx >= {required_sx_in3} in^3")
         # Sort by weight, then by Sx (descending) so ties go to the stronger beam.
-        best = candidates.sort_values(
-            ["weight_lb_ft", "sx_in3"], ascending=[True, False]
-        ).iloc[0]
+        best = candidates.sort_values(["weight_lb_ft", "sx_in3"], ascending=[True, False]).iloc[0]
         return best.to_dict()
 
 

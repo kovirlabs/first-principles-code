@@ -43,8 +43,15 @@ class Design:
 
     # --- Root finding -----------------------------------------------------
     def rectangular_beam_height_for_deflection(
-        self, *, load, length, modulus, width, max_deflection,
-        min_height=1e-3, max_height=10.0,
+        self,
+        *,
+        load,
+        length,
+        modulus,
+        width,
+        max_deflection,
+        min_height=1e-3,
+        max_height=10.0,
     ):
         """Find the beam height that gives exactly the allowed deflection.
 
@@ -71,20 +78,34 @@ class Design:
         """
 
         def residual(height):
-            return self._deflection(
-                load=load, length=length, modulus=modulus, width=width, height=height,
-            ) - max_deflection
+            return (
+                self._deflection(
+                    load=load,
+                    length=length,
+                    modulus=modulus,
+                    width=width,
+                    height=height,
+                )
+                - max_deflection
+            )
 
         if residual(min_height) * residual(max_height) > 0:
-            raise ValueError(
-                "no sign change between min_height and max_height; widen the bracket"
-            )
+            raise ValueError("no sign change between min_height and max_height; widen the bracket")
         return float(brentq(residual, min_height, max_height, xtol=1e-12))
 
     # --- Constrained optimization ----------------------------------------
     def lightest_rectangular_beam(
-        self, *, load, length, modulus, density, allowable_stress, max_deflection,
-        width_bounds=(0.01, 0.5), height_bounds=(0.01, 1.0), max_aspect_ratio=4.0,
+        self,
+        *,
+        load,
+        length,
+        modulus,
+        density,
+        allowable_stress,
+        max_deflection,
+        width_bounds=(0.01, 0.5),
+        height_bounds=(0.01, 1.0),
+        max_aspect_ratio=4.0,
     ):
         """Find the lightest rectangular beam that is strong and stiff enough.
 
@@ -147,7 +168,11 @@ class Design:
         def deflection_margin(x):
             width, height = x
             deflection = self._deflection(
-                load=load, length=length, modulus=modulus, width=width, height=height,
+                load=load,
+                length=length,
+                modulus=modulus,
+                width=width,
+                height=height,
             )
             return 1 - deflection / max_deflection
 
@@ -174,8 +199,8 @@ class Design:
 
         width, height = result.x
         active = [
-            name for name, margin in
-            (
+            name
+            for name, margin in (
                 ("stress", stress_margin(result.x)),
                 ("deflection", deflection_margin(result.x)),
                 ("aspect_ratio", aspect_margin(result.x)),
@@ -189,8 +214,14 @@ class Design:
             "stress": float(
                 self._bending_stress(load=load, length=length, width=width, height=height)
             ),
-            "deflection": float(self._deflection(
-                load=load, length=length, modulus=modulus, width=width, height=height,
-            )),
+            "deflection": float(
+                self._deflection(
+                    load=load,
+                    length=length,
+                    modulus=modulus,
+                    width=width,
+                    height=height,
+                )
+            ),
             "active": active,
         }

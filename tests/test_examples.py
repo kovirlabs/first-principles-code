@@ -25,7 +25,11 @@ SCRIPTS = sorted((ROOT / "examples").glob("*.py")) + [
 def test_script_runs(script):
     environment = {**os.environ, "MPLBACKEND": "Agg"}
     completed = subprocess.run(
-        [sys.executable, str(script)], cwd=ROOT, env=environment,
-        capture_output=True, text=True, timeout=120,
+        [sys.executable, str(script)],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     assert completed.returncode == 0, completed.stderr

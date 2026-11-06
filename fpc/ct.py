@@ -88,8 +88,9 @@ class CT:
         width, level = self._resolve_window(window_width, window_level, preset)
         return level - width / 2.0, level + width / 2.0
 
-    def apply_window(self, *, hounsfield, window_width=None, window_level=None, preset=None,
-                     output_max=255):
+    def apply_window(
+        self, *, hounsfield, window_width=None, window_level=None, preset=None, output_max=255
+    ):
         """Map HU values to display grey levels for a chosen window.
 
         Values are clipped to the window, then scaled linearly to 0..output_max.
@@ -105,7 +106,9 @@ class CT:
         :returns: numpy array of grey levels (uint8 when output_max == 255)
         """
         lower, upper = self.window_bounds(
-            window_width=window_width, window_level=window_level, preset=preset,
+            window_width=window_width,
+            window_level=window_level,
+            preset=preset,
         )
         hu = np.asarray(hounsfield, dtype=float)
         # np.clip and the arithmetic below run over the whole image at once -
@@ -160,8 +163,9 @@ class CT:
         :returns: effective dose estimate [mSv]
         """
         if region not in self.DLP_TO_EFFECTIVE_DOSE:
-            raise ValueError(f"unknown region {region!r}; use one of: "
-                             f"{', '.join(self.DLP_TO_EFFECTIVE_DOSE)}")
+            raise ValueError(
+                f"unknown region {region!r}; use one of: {', '.join(self.DLP_TO_EFFECTIVE_DOSE)}"
+            )
         return self.DLP_TO_EFFECTIVE_DOSE[region] * dlp_mgy_cm
 
     # ------------------------------------------------------------------
@@ -175,8 +179,9 @@ class CT:
         """
         if preset is not None:
             if preset not in self.WINDOW_PRESETS:
-                raise ValueError(f"unknown preset {preset!r}; use one of: "
-                                 f"{', '.join(self.WINDOW_PRESETS)}")
+                raise ValueError(
+                    f"unknown preset {preset!r}; use one of: {', '.join(self.WINDOW_PRESETS)}"
+                )
             return self.WINDOW_PRESETS[preset]
         if width is None or level is None:
             raise ValueError("give window_width and window_level, or a preset")

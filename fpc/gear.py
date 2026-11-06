@@ -8,8 +8,6 @@ single gear, the ratio of a meshing pair, how speed and torque transform across
 a ratio, and how to combine stages into an overall powertrain ratio.
 """
 
-import math
-
 
 class Gear:
     """Gear and powertrain calculations."""

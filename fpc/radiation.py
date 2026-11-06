@@ -25,10 +25,10 @@ class Radiation:
     # missing on purpose: their w_R depends on energy, so they get a method of
     # their own (see :meth:`neutron_weighting_factor`).
     RADIATION_WEIGHTING_FACTORS = {
-        "photon": 1.0,      # x-rays and gamma rays
-        "electron": 1.0,    # beta particles, muons
+        "photon": 1.0,  # x-rays and gamma rays
+        "electron": 1.0,  # beta particles, muons
         "proton": 2.0,
-        "alpha": 20.0,      # also fission fragments and heavy ions
+        "alpha": 20.0,  # also fission fragments and heavy ions
     }
 
     # ICRP 103 tissue weighting factors w_T. They describe what fraction of the
@@ -39,7 +39,7 @@ class Radiation:
         "lung": 0.12,
         "stomach": 0.12,
         "breast": 0.12,
-        "remainder": 0.12,   # 13 remaining tissues, averaged together
+        "remainder": 0.12,  # 13 remaining tissues, averaged together
         "gonads": 0.08,
         "bladder": 0.04,
         "oesophagus": 0.04,
@@ -207,10 +207,10 @@ class Radiation:
             raise ValueError("neutron energy must be positive")
         # Three branches straight from ICRP 103, eq. (4.3).
         if energy_mev < 1.0:
-            return 2.5 + 18.2 * math.exp(-math.log(energy_mev) ** 2 / 6)
+            return 2.5 + 18.2 * math.exp(-(math.log(energy_mev) ** 2) / 6)
         if energy_mev <= 50.0:
-            return 5.0 + 17.0 * math.exp(-math.log(2 * energy_mev) ** 2 / 6)
-        return 2.5 + 3.25 * math.exp(-math.log(0.04 * energy_mev) ** 2 / 6)
+            return 5.0 + 17.0 * math.exp(-(math.log(2 * energy_mev) ** 2) / 6)
+        return 2.5 + 3.25 * math.exp(-(math.log(0.04 * energy_mev) ** 2) / 6)
 
     def equivalent_dose(self, *, absorbed_dose, radiation_type):
         """Equivalent dose H_T = w_R * D_T.
@@ -227,7 +227,10 @@ class Radiation:
             weight = self.RADIATION_WEIGHTING_FACTORS[radiation_type]
         except KeyError:
             valid = ", ".join(self.RADIATION_WEIGHTING_FACTORS)
-            raise ValueError(f"unknown radiation_type {radiation_type!r}; use one of: {valid}")
+            # "from None" hides the internal KeyError: the ValueError says it all.
+            raise ValueError(
+                f"unknown radiation_type {radiation_type!r}; use one of: {valid}"
+            ) from None
         return weight * absorbed_dose
 
     def effective_dose(self, *, organ_equivalent_doses):

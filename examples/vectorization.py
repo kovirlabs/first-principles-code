@@ -26,13 +26,13 @@ import time
 
 import numpy as np
 
-YIELD_STRENGTH = 250e6              # Pa
-DIAMETER = 0.04                     # m, solid round shaft
+YIELD_STRENGTH = 250e6  # Pa
+DIAMETER = 0.04  # m, solid round shaft
 SECOND_MOMENT = np.pi * DIAMETER**4 / 64
 FIBRE_DISTANCE = DIAMETER / 2
 
 rng = np.random.default_rng(seed=0)
-moments = rng.normal(loc=1000, scale=300, size=1_000_000)    # N*m, one per case
+moments = rng.normal(loc=1000, scale=300, size=1_000_000)  # N*m, one per case
 
 
 def with_loop():
@@ -50,7 +50,7 @@ def with_loop():
 def vectorized():
     """The NumPy way: the formula, applied to every case at once."""
     stresses = moments * FIBRE_DISTANCE / SECOND_MOMENT
-    return int((stresses > YIELD_STRENGTH).sum())   # True counts as 1
+    return int((stresses > YIELD_STRENGTH).sum())  # True counts as 1
 
 
 def timed(function):
@@ -62,7 +62,7 @@ def timed(function):
 def main():
     loop_count, loop_time = timed(with_loop)
     vec_count, vec_time = timed(vectorized)
-    assert loop_count == vec_count               # same answer, different speed
+    assert loop_count == vec_count  # same answer, different speed
     print(f"Cases above yield: {vec_count} of {len(moments):,}")
     print(f"  Python loop : {loop_time * 1000:8.1f} ms")
     print(f"  NumPy       : {vec_time * 1000:8.1f} ms  ({loop_time / vec_time:.0f}x faster)\n")
@@ -70,8 +70,10 @@ def main():
     # --- Boolean masking: pull out just the failing cases ----------------
     stresses = moments * FIBRE_DISTANCE / SECOND_MOMENT
     failing = stresses[stresses > YIELD_STRENGTH]
-    print(f"Worst stress {failing.max() / 1e6:.0f} MPa; "
-          f"mean of the failures {failing.mean() / 1e6:.0f} MPa")
+    print(
+        f"Worst stress {failing.max() / 1e6:.0f} MPa; "
+        f"mean of the failures {failing.mean() / 1e6:.0f} MPa"
+    )
 
     # --- Broadcasting: a design table over two variables -----------------
     # Column of diameters (shape (5, 1)) against a row of moments (shape (4,)).
@@ -81,7 +83,7 @@ def main():
     table = design_moments * (diameters / 2) / (np.pi * diameters**4 / 64) / 1e6
     print("\nStress [MPa]  (rows: diameter, columns: moment [N*m])")
     print("   d [mm] " + "".join(f"{m:>8}" for m in design_moments))
-    for d, row in zip(diameters.ravel(), table):
+    for d, row in zip(diameters.ravel(), table, strict=True):
         # Mark cells above yield with '*'.
         cells = "".join(f"{s:7.0f}{'*' if s > YIELD_STRENGTH / 1e6 else ' '}" for s in row)
         print(f"   {d * 1000:6.0f} {cells}")

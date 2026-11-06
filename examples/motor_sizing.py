@@ -31,8 +31,8 @@ LEAD_M = 0.010
 STROKE_M = 0.300
 MOVE_TIME_S = 0.6
 DWELL_S = 0.4
-FRICTION_COEFF = 0.05          # linear guide
-SCREW_INERTIA = 1.2e-4         # kg*m^2 (from screw supplier)
+FRICTION_COEFF = 0.05  # linear guide
+SCREW_INERTIA = 1.2e-4  # kg*m^2 (from screw supplier)
 SCREW_EFFICIENCY = 0.9
 SAFETY_FACTOR = 1.5
 
@@ -56,14 +56,14 @@ def main():
 
     # --- 2-3. Torque in each phase ---------------------------------------
     friction = FRICTION_COEFF * MASS_KG * 9.81
-    alpha = accel / LEAD_M * 2 * math.pi          # screw angular accel [rad/s^2]
+    alpha = accel / LEAD_M * 2 * math.pi  # screw angular accel [rad/s^2]
 
     def phase_torque(force, rotor_inertia):
         """Torque = ball-screw torque for the linear force + spin-up torque."""
-        linear = mech.ballscrew_torque(thrust_force=force, lead=LEAD_M,
-                                       efficiency=SCREW_EFFICIENCY)
-        spin = mech.acceleration_torque(inertia=SCREW_INERTIA + rotor_inertia,
-                                        angular_acceleration=alpha)
+        linear = mech.ballscrew_torque(thrust_force=force, lead=LEAD_M, efficiency=SCREW_EFFICIENCY)
+        spin = mech.acceleration_torque(
+            inertia=SCREW_INERTIA + rotor_inertia, angular_acceleration=alpha
+        )
         return linear, spin
 
     reflected_mass = MASS_KG * (LEAD_M / (2 * math.pi)) ** 2
@@ -74,8 +74,9 @@ def main():
         lin_acc, spin = phase_torque(friction + MASS_KG * accel, motor["rotor"])
         lin_dec, _ = phase_torque(friction - MASS_KG * accel, motor["rotor"])
         t_accel = lin_acc + spin
-        t_cruise = mech.ballscrew_torque(thrust_force=friction, lead=LEAD_M,
-                                         efficiency=SCREW_EFFICIENCY)
+        t_cruise = mech.ballscrew_torque(
+            thrust_force=friction, lead=LEAD_M, efficiency=SCREW_EFFICIENCY
+        )
         t_decel = lin_dec - spin
         cycle = MOVE_TIME_S + DWELL_S
         rms = math.sqrt((t_accel**2 + t_cruise**2 + t_decel**2) * t_acc / cycle)
@@ -88,10 +89,15 @@ def main():
             "speed": rpm_peak <= motor["max_rpm"],
             "inertia<=10": ratio <= 10,
         }
-        verdict = "OK" if all(checks.values()) else "fails " + ", ".join(
-            name for name, ok in checks.items() if not ok)
-        print(f"{motor['model']:>7}: peak {t_accel:4.2f} N*m, RMS {rms:4.2f} N*m, "
-              f"J ratio {ratio:5.1f}  -> {verdict}")
+        verdict = (
+            "OK"
+            if all(checks.values())
+            else "fails " + ", ".join(name for name, ok in checks.items() if not ok)
+        )
+        print(
+            f"{motor['model']:>7}: peak {t_accel:4.2f} N*m, RMS {rms:4.2f} N*m, "
+            f"J ratio {ratio:5.1f}  -> {verdict}"
+        )
 
 
 if __name__ == "__main__":

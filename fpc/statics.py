@@ -34,7 +34,7 @@ class Statics:
         :param fy: force component along y [N]
         :returns: tuple (magnitude [N], angle [degrees] measured from +x axis)
         """
-        magnitude = math.hypot(fx, fy)          # sqrt(fx^2 + fy^2)
+        magnitude = math.hypot(fx, fy)  # sqrt(fx^2 + fy^2)
         angle_deg = math.degrees(math.atan2(fy, fx))
         return magnitude, angle_deg
 

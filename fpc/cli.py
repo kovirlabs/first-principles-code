@@ -58,7 +58,8 @@ def _water(args):
 def build_parser():
     """Build the top-level parser with one subparser per tool."""
     parser = argparse.ArgumentParser(
-        prog="fpc", description="First Principles Code engineering calculations.",
+        prog="fpc",
+        description="First Principles Code engineering calculations.",
     )
     tools = parser.add_subparsers(dest="tool", required=True)
 
@@ -66,16 +67,22 @@ def build_parser():
     pipe.add_argument("--flow-l-s", type=float, required=True, help="flow rate [L/s]")
     pipe.add_argument("--diameter-mm", type=float, required=True, help="inner diameter [mm]")
     pipe.add_argument("--length-m", type=float, required=True, help="pipe length [m]")
-    pipe.add_argument("--roughness-mm", type=float, default=0.045,
-                      help="absolute roughness [mm] (default 0.045, commercial steel)")
-    pipe.add_argument("--temperature-c", type=float, default=20.0,
-                      help="water temperature [degC] (default 20)")
+    pipe.add_argument(
+        "--roughness-mm",
+        type=float,
+        default=0.045,
+        help="absolute roughness [mm] (default 0.045, commercial steel)",
+    )
+    pipe.add_argument(
+        "--temperature-c", type=float, default=20.0, help="water temperature [degC] (default 20)"
+    )
     # set_defaults(handler=...) attaches the function that runs this tool.
     pipe.set_defaults(handler=_pipe_flow)
 
     water = tools.add_parser("water", help="liquid water properties at 1 atm")
-    water.add_argument("--temperature-c", type=float, required=True,
-                       help="temperature [degC], 1 to 99")
+    water.add_argument(
+        "--temperature-c", type=float, required=True, help="temperature [degC], 1 to 99"
+    )
     water.set_defaults(handler=_water)
     return parser
 

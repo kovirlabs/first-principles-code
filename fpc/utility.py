@@ -29,7 +29,7 @@ class Utility:
         :returns: parsed data as a dict (or list, matching the JSON's top level)
         """
         # ``with`` guarantees the file is closed even if parsing raises.
-        with open(file_path, "r", encoding="utf-8") as handle:
+        with open(file_path, encoding="utf-8") as handle:
             return json.load(handle)
 
     def dict_to_json(self, *, data, file_path, indent=2):

@@ -28,13 +28,16 @@ def radiation_protection():
     # A loop over distances shows the inverse square law in action.
     for distance_m in (1, 2, 3, 4):
         rate = radiation.inverse_square_law(
-            initial_intensity=100.0, initial_distance=1.0, new_distance=distance_m,
+            initial_intensity=100.0,
+            initial_distance=1.0,
+            new_distance=distance_m,
         )
         print(f"  {distance_m} m from source : {rate:6.2f} uGy/h")
 
     # Lead at ~100 keV: mu/rho ~5.55 cm^2/g (NIST XCOM), rho = 11.35 g/cm^3.
     mu_lead = radiation.linear_attenuation_coefficient(
-        mass_attenuation_coefficient=5.55, density=11.35,
+        mass_attenuation_coefficient=5.55,
+        density=11.35,
     )
     hvl_mm = radiation.half_value_layer(attenuation_coefficient=mu_lead) * 10
     print(f"  HVL of lead at 100 keV    : {hvl_mm:.2f} mm\n")
@@ -44,12 +47,13 @@ def radiography_technique():
     """Adjust a technique chart for a new SID and a grid."""
     radiography = Radiography()
     mas = radiography.mas(tube_current_ma=200, exposure_time_s=0.05)
-    new_mas = radiography.exposure_maintenance_mas(original_mas=mas, original_sid=100,
-                                                   new_sid=180)
+    new_mas = radiography.exposure_maintenance_mas(original_mas=mas, original_sid=100, new_sid=180)
     gridded = radiography.grid_mas(original_mas=new_mas, original_grid="none", new_grid="12:1")
     print("Radiography technique")
     print("-" * 48)
-    print(f"  10 mAs at 100 cm -> {new_mas:.1f} mAs at 180 cm -> {gridded:.0f} mAs with 12:1 grid\n")
+    print(
+        f"  10 mAs at 100 cm -> {new_mas:.1f} mAs at 180 cm -> {gridded:.0f} mAs with 12:1 grid\n"
+    )
 
 
 def mri_contrast():
@@ -63,8 +67,10 @@ def mri_contrast():
     print("MRI spin-echo signal (relative)")
     print("-" * 48)
     for name, timing in sequences.items():
-        signals = {tissue: mri.spin_echo_signal(**timing, tissue=tissue)
-                   for tissue in ("fat", "white_matter", "csf")}
+        signals = {
+            tissue: mri.spin_echo_signal(**timing, tissue=tissue)
+            for tissue in ("fat", "white_matter", "csf")
+        }
         brightest = max(signals, key=lambda tissue: signals[tissue])
         row = "  ".join(f"{t}={s:.2f}" for t, s in signals.items())
         print(f"  {name:20s} {row}  -> brightest: {brightest}")
@@ -79,8 +85,9 @@ def ultrasound_doppler():
     shift = ultrasound.doppler_shift(transmitted_frequency_mhz=5, velocity=0.5, angle_deg=60)
     # If the operator mis-sets the angle cursor, the velocity estimate is wrong.
     for assumed_angle in (50, 60, 70):
-        v = ultrasound.doppler_velocity(transmitted_frequency_mhz=5, doppler_shift_hz=shift,
-                                        angle_deg=assumed_angle)
+        v = ultrasound.doppler_velocity(
+            transmitted_frequency_mhz=5, doppler_shift_hz=shift, angle_deg=assumed_angle
+        )
         print(f"  angle cursor at {assumed_angle} deg -> {v:.2f} m/s")
     print()
 
@@ -97,8 +104,10 @@ def ct_windowing():
         if value is not None:
             print(f"  {key:18s}: {value}")
     print(f"  HU range          : {hu.min():.0f} to {hu.max():.0f}")
-    print(f"  centre pixel      : {hu[64, 64]:.0f} HU "
-          f"({ct.classify_hounsfield(hounsfield=hu[64, 64])})")
+    print(
+        f"  centre pixel      : {hu[64, 64]:.0f} HU "
+        f"({ct.classify_hounsfield(hounsfield=hu[64, 64])})"
+    )
 
     presets = ["abdomen", "lung", "bone"]
     figure, axes = plt.subplots(1, len(presets) + 1, figsize=(14, 4))
@@ -107,15 +116,13 @@ def ct_windowing():
     thickness_cm = np.linspace(0, 10, 200)
     for label, mu in {"soft tissue (0.18/cm)": 0.18, "bone (0.48/cm)": 0.48}.items():
         axes[0].plot(thickness_cm, np.exp(-mu * thickness_cm) * 100, label=label)
-    axes[0].set(title="Attenuation at ~60 keV", xlabel="thickness [cm]",
-                ylabel="transmitted [%]")
+    axes[0].set(title="Attenuation at ~60 keV", xlabel="thickness [cm]", ylabel="transmitted [%]")
     axes[0].legend()
 
     # Panels 2-4: the same HU data through different windows.
-    for axis, preset in zip(axes[1:], presets):
+    for axis, preset in zip(axes[1:], presets, strict=True):
         width, level = CT.WINDOW_PRESETS[preset]
-        axis.imshow(ct.apply_window(hounsfield=hu, preset=preset), cmap="gray",
-                    vmin=0, vmax=255)
+        axis.imshow(ct.apply_window(hounsfield=hu, preset=preset), cmap="gray", vmin=0, vmax=255)
         axis.set_title(f"{preset} window (W{width} / L{level})")
         axis.axis("off")
 

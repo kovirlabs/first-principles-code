@@ -36,10 +36,9 @@ from pint import Quantity
 
 from fpc.units import Q_
 
-
 # A sensible default material so a beam can be created with just its geometry.
-STEEL_MODULUS = Q_(200, "GPa")        # Young's modulus of structural steel
-STEEL_DENSITY = Q_(7850, "kg/m**3")   # density of structural steel
+STEEL_MODULUS = Q_(200, "GPa")  # Young's modulus of structural steel
+STEEL_DENSITY = Q_(7850, "kg/m**3")  # density of structural steel
 
 
 @dataclass
@@ -81,9 +80,7 @@ class Beam:
         """Raise a helpful error unless ``quantity`` is positive with the right units."""
         # ``.check()`` confirms the quantity has the expected dimensionality.
         if not hasattr(quantity, "check") or not quantity.check(dimensionality):
-            raise ValueError(
-                f"{name} must be a Pint quantity with dimensionality {dimensionality}"
-            )
+            raise ValueError(f"{name} must be a Pint quantity with dimensionality {dimensionality}")
         if quantity.magnitude <= 0:
             raise ValueError(f"{name} must be positive, got {quantity}")
 
@@ -100,7 +97,7 @@ class Beam:
         This is the property that resists bending; a taller section (bigger h)
         is dramatically stiffer because h is cubed.
         """
-        return self.width * self.height ** 3 / 12
+        return self.width * self.height**3 / 12
 
     @property
     def mass(self):
@@ -118,7 +115,7 @@ class Beam:
         :returns: maximum deflection (a ``[length]`` quantity)
         """
         self._require(load, "[force]", "load")
-        deflection = load * self.length ** 3 / (48 * self.modulus * self.moment_of_inertia)
+        deflection = load * self.length**3 / (48 * self.modulus * self.moment_of_inertia)
         # Reduce to base units so the result reads cleanly as metres.
         return deflection.to_base_units()
 
@@ -148,10 +145,10 @@ class Beam:
         :returns: critical axial load (a ``[force]`` quantity)
         """
         # Second moments about both axes; buckling follows the smaller one.
-        inertia_strong = self.width * self.height ** 3 / 12
-        inertia_weak = self.height * self.width ** 3 / 12
+        inertia_strong = self.width * self.height**3 / 12
+        inertia_weak = self.height * self.width**3 / 12
         inertia_min = min(inertia_strong, inertia_weak)
 
         effective_length = end_factor * self.length
-        load = math.pi ** 2 * self.modulus * inertia_min / effective_length ** 2
+        load = math.pi**2 * self.modulus * inertia_min / effective_length**2
         return load.to_base_units()
