@@ -16,6 +16,14 @@ medical physicist, a validated dosimetry system, or your local regulations.
 """
 
 import math
+from typing import Literal
+
+# The radiation types with a fixed ICRP 103 weighting factor. A ``Literal``
+# type lists the only strings a parameter accepts, so mypy (and the JSON
+# Schema built by fpc.registry) can reject a typo like "gama" up front.
+# A plain assignment (not a ``type`` statement) keeps the alias transparent
+# to ``typing.get_type_hints``, which then sees the Literal itself.
+RadiationType = Literal["photon", "electron", "proton", "alpha"]
 
 
 class Radiation:
@@ -58,17 +66,19 @@ class Radiation:
     # ------------------------------------------------------------------
     # Distance
     # ------------------------------------------------------------------
-    def inverse_square_law(self, *, initial_intensity, initial_distance, new_distance):
+    def inverse_square_law(
+        self, *, initial_intensity: float, initial_distance: float, new_distance: float
+    ) -> float:
         """Intensity at a new distance from a point source.
 
         Radiation spreads over a sphere whose area grows with r^2, so intensity
         falls as 1/r^2:  I2 = I1 * (d1 / d2)^2.  Doubling your distance from the
         tube cuts your exposure to one quarter - the cheapest protection there is.
 
-        :param initial_intensity: intensity (or exposure / dose rate) at d1, any unit
-        :param initial_distance: original distance d1 (any length unit)
-        :param new_distance: new distance d2 (same unit as d1)
-        :returns: intensity at d2, in the same unit as ``initial_intensity``
+        :param initial_intensity: intensity (or exposure / dose rate) at d1 [any unit]
+        :param initial_distance: original distance d1 [any length unit]
+        :param new_distance: new distance d2 [same unit as d1]
+        :returns: intensity at d2 [same unit as initial_intensity]
         """
         if initial_distance <= 0 or new_distance <= 0:
             raise ValueError("distances must be positive")
@@ -77,20 +87,24 @@ class Radiation:
     # ------------------------------------------------------------------
     # Attenuation and shielding
     # ------------------------------------------------------------------
-    def transmitted_intensity(self, *, initial_intensity, attenuation_coefficient, thickness):
+    def transmitted_intensity(
+        self, *, initial_intensity: float, attenuation_coefficient: float, thickness: float
+    ) -> float:
         """Narrow-beam (Beer-Lambert) attenuation:  I = I0 * exp(-mu * x).
 
         Each thin slab of material removes the same FRACTION of the photons
         that reach it, which is why the curve is exponential, not linear.
 
-        :param initial_intensity: incident intensity I0 (any unit)
+        :param initial_intensity: incident intensity I0 [any unit]
         :param attenuation_coefficient: linear attenuation coefficient mu [1/cm]
         :param thickness: material thickness x [cm]
-        :returns: transmitted intensity, same unit as I0
+        :returns: transmitted intensity [same unit as I0]
         """
         return initial_intensity * math.exp(-attenuation_coefficient * thickness)
 
-    def linear_attenuation_coefficient(self, *, mass_attenuation_coefficient, density):
+    def linear_attenuation_coefficient(
+        self, *, mass_attenuation_coefficient: float, density: float
+    ) -> float:
         """Linear coefficient mu [1/cm] from mass coefficient mu/rho [cm^2/g].
 
         Tables (e.g. NIST XCOM) list mu/rho because it does not depend on the
@@ -102,7 +116,7 @@ class Radiation:
         """
         return mass_attenuation_coefficient * density
 
-    def half_value_layer(self, *, attenuation_coefficient):
+    def half_value_layer(self, *, attenuation_coefficient: float) -> float:
         """Half-value layer HVL = ln(2) / mu.
 
         The thickness that cuts the beam intensity in half. Clinically the HVL
@@ -113,7 +127,7 @@ class Radiation:
         """
         return math.log(2) / attenuation_coefficient
 
-    def tenth_value_layer(self, *, attenuation_coefficient):
+    def tenth_value_layer(self, *, attenuation_coefficient: float) -> float:
         """Tenth-value layer TVL = ln(10) / mu  (~3.32 HVLs).
 
         Shielding designers prefer TVLs: each one cuts intensity by 10x.
@@ -123,7 +137,7 @@ class Radiation:
         """
         return math.log(10) / attenuation_coefficient
 
-    def shielding_thickness(self, *, attenuation_coefficient, transmission):
+    def shielding_thickness(self, *, attenuation_coefficient: float, transmission: float) -> float:
         """Thickness needed to let only a given fraction of the beam through.
 
         Solve I/I0 = exp(-mu*x) for x:  x = -ln(T) / mu.
@@ -132,7 +146,7 @@ class Radiation:
         must be thicker than this narrow-beam estimate (see NCRP Report 147).
 
         :param attenuation_coefficient: mu [1/cm]
-        :param transmission: desired transmitted fraction T, 0 < T <= 1
+        :param transmission: desired transmitted fraction T, 0 < T <= 1 [-]
         :returns: required thickness [cm]
         """
         if not 0 < transmission <= 1:
@@ -142,7 +156,7 @@ class Radiation:
     # ------------------------------------------------------------------
     # Photon energy
     # ------------------------------------------------------------------
-    def photon_wavelength(self, *, energy_kev):
+    def photon_wavelength(self, *, energy_kev: float) -> float:
         """Photon wavelength from energy:  lambda = h*c / E.
 
         Applied to the tube voltage this gives the Duane-Hunt minimum
@@ -157,38 +171,42 @@ class Radiation:
     # ------------------------------------------------------------------
     # Radioactive decay (nuclear medicine)
     # ------------------------------------------------------------------
-    def decay_constant(self, *, half_life):
+    def decay_constant(self, *, half_life: float) -> float:
         """Decay constant lambda = ln(2) / T_half.
 
-        :param half_life: physical half-life (any time unit)
+        :param half_life: physical half-life [any time unit]
         :returns: decay constant [1 / that time unit]
         """
         return math.log(2) / half_life
 
-    def remaining_activity(self, *, initial_activity, half_life, elapsed_time):
+    def remaining_activity(
+        self, *, initial_activity: float, half_life: float, elapsed_time: float
+    ) -> float:
         """Activity left after decay:  A = A0 * exp(-lambda * t).
 
         Used daily in nuclear medicine to work out how much of a dose is left
         at injection time (e.g. Tc-99m, T_half = 6.01 h).
 
-        :param initial_activity: A0 (MBq, mCi, ...)
-        :param half_life: half-life (any time unit)
-        :param elapsed_time: elapsed time (same unit as half_life)
-        :returns: remaining activity, same unit as A0
+        :param initial_activity: A0 [MBq, mCi, ... any activity unit]
+        :param half_life: half-life [any time unit]
+        :param elapsed_time: elapsed time [same unit as half_life]
+        :returns: remaining activity [same unit as A0]
         """
         decay = self.decay_constant(half_life=half_life)
         return initial_activity * math.exp(-decay * elapsed_time)
 
-    def effective_half_life(self, *, physical_half_life, biological_half_life):
+    def effective_half_life(
+        self, *, physical_half_life: float, biological_half_life: float
+    ) -> float:
         """Effective half-life in the body:  1/Te = 1/Tp + 1/Tb.
 
         A radiopharmaceutical leaves the patient two ways at once - it decays
         (physical) AND is excreted (biological) - so the rates add, and the
         effective half-life is always shorter than either one.
 
-        :param physical_half_life: Tp (any time unit)
-        :param biological_half_life: Tb (same unit)
-        :returns: effective half-life Te (same unit)
+        :param physical_half_life: Tp [any time unit]
+        :param biological_half_life: Tb [same unit as Tp]
+        :returns: effective half-life Te [same unit as Tp]
         """
         return (physical_half_life * biological_half_life) / (
             physical_half_life + biological_half_life
@@ -197,7 +215,7 @@ class Radiation:
     # ------------------------------------------------------------------
     # Dosimetry: Gy -> Sv
     # ------------------------------------------------------------------
-    def neutron_weighting_factor(self, *, energy_mev):
+    def neutron_weighting_factor(self, *, energy_mev: float) -> float:
         """ICRP 103 continuous radiation weighting factor for neutrons.
 
         :param energy_mev: neutron energy [MeV]
@@ -212,7 +230,7 @@ class Radiation:
             return 5.0 + 17.0 * math.exp(-(math.log(2 * energy_mev) ** 2) / 6)
         return 2.5 + 3.25 * math.exp(-(math.log(0.04 * energy_mev) ** 2) / 6)
 
-    def equivalent_dose(self, *, absorbed_dose, radiation_type):
+    def equivalent_dose(self, *, absorbed_dose: float, radiation_type: RadiationType) -> float:
         """Equivalent dose H_T = w_R * D_T.
 
         Absorbed dose (Gy = J/kg) says how much energy was deposited; the
@@ -233,7 +251,7 @@ class Radiation:
             ) from None
         return weight * absorbed_dose
 
-    def effective_dose(self, *, organ_equivalent_doses):
+    def effective_dose(self, *, organ_equivalent_doses: dict[str, float]) -> float:
         """Effective dose E = sum over organs of w_T * H_T.
 
         Lets you compare a chest x-ray with a head CT on one risk-related

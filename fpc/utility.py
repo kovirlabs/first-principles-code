@@ -16,13 +16,26 @@ gracefully when no display is available (e.g. on a server).
 
 import csv
 import json
+import os
+from collections.abc import Iterable, Sequence
 from pathlib import Path
+from typing import Any
+
+# pandas is imported at module level (not inside read_table) because the
+# ``pd.DataFrame`` type hints below must resolve at runtime for
+# ``typing.get_type_hints`` (used by fpc.registry). fpc.properties already
+# imports pandas, so this adds no start-up cost to ``import fpc``.
+import pandas as pd
+
+# A file location may be a plain string or any path-like object such as
+# ``pathlib.Path``; ``os.PathLike[str]`` is the type that covers the latter.
+FilePath = str | os.PathLike[str]
 
 
 class Utility:
     """File, data, and dialog helpers for engineering scripts."""
 
-    def json_to_dict(self, *, file_path):
+    def json_to_dict(self, *, file_path: FilePath) -> Any:
         """Read a JSON file from disk and return it as a Python dictionary.
 
         :param file_path: path to the .json file
@@ -32,19 +45,25 @@ class Utility:
         with open(file_path, encoding="utf-8") as handle:
             return json.load(handle)
 
-    def dict_to_json(self, *, data, file_path, indent=2):
+    def dict_to_json(self, *, data: Any, file_path: FilePath, indent: int = 2) -> FilePath:
         """Write a dictionary to a JSON file (pretty-printed by default).
 
         :param data: the dict (or list) to serialise
         :param file_path: destination .json path
-        :param indent: spaces of indentation for readability, defaults to 2
+        :param indent: spaces of indentation for readability, defaults to 2 [-]
         :returns: the file_path that was written, for convenience
         """
         with open(file_path, "w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=indent)
         return file_path
 
-    def export_csv(self, *, rows, file_path, header=None):
+    def export_csv(
+        self,
+        *,
+        rows: Iterable[Sequence[Any]],
+        file_path: FilePath,
+        header: Sequence[str] | None = None,
+    ) -> FilePath:
         """Write a list of rows to a CSV file for use in Excel/Sheets.
 
         :param rows: iterable of rows, where each row is a list/tuple of values
@@ -60,7 +79,7 @@ class Utility:
             writer.writerows(rows)
         return file_path
 
-    def read_table(self, *, file_path, sheet_name=0):
+    def read_table(self, *, file_path: FilePath, sheet_name: str | int = 0) -> pd.DataFrame:
         """Read a CSV or Excel file into a pandas DataFrame.
 
         pandas is the standard tool for tabular data (sensor logs, test
@@ -73,10 +92,6 @@ class Utility:
         :returns: a ``pandas.DataFrame``
         :raises ValueError: for an unsupported file extension
         """
-        # Import here so `from fpc import Utility` stays fast for scripts that
-        # never touch tables.
-        import pandas as pd
-
         suffix = Path(file_path).suffix.lower()
         if suffix == ".csv":
             return pd.read_csv(file_path)
@@ -85,7 +100,7 @@ class Utility:
             return pd.read_excel(file_path, sheet_name=sheet_name)
         raise ValueError(f"unsupported table format {suffix!r}; use .csv or .xlsx")
 
-    def write_table(self, *, frame, file_path):
+    def write_table(self, *, frame: pd.DataFrame, file_path: FilePath) -> FilePath:
         """Write a pandas DataFrame to CSV or Excel, chosen by file extension.
 
         :param frame: the ``pandas.DataFrame`` to save
@@ -103,7 +118,12 @@ class Utility:
             raise ValueError(f"unsupported table format {suffix!r}; use .csv or .xlsx")
         return file_path
 
-    def pick_file(self, *, title="Select a file", file_types=(("All files", "*.*"),)):
+    def pick_file(
+        self,
+        *,
+        title: str = "Select a file",
+        file_types: Sequence[tuple[str, str]] = (("All files", "*.*"),),
+    ) -> str | None:
         """Open a native "open file" dialog and return the chosen path.
 
         Uses tkinter, which ships with Python. On a headless machine (no

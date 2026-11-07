@@ -15,7 +15,7 @@ import math
 class Mechatronics:
     """Motion-system sizing calculations: ball screws, servos, drives."""
 
-    def ballscrew_linear_speed(self, *, motor_rpm, lead):
+    def ballscrew_linear_speed(self, *, motor_rpm: float, lead: float) -> float:
         """Linear speed of a ball-screw nut from motor speed.
 
         v = (rpm / 60) * lead.  Each revolution advances the nut by one lead.
@@ -27,7 +27,9 @@ class Mechatronics:
         revolutions_per_second = motor_rpm / 60.0
         return revolutions_per_second * lead
 
-    def ballscrew_torque(self, *, thrust_force, lead, efficiency=0.9):
+    def ballscrew_torque(
+        self, *, thrust_force: float, lead: float, efficiency: float = 0.9
+    ) -> float:
         """Motor torque needed to drive a thrust load through a ball screw.
 
         T = F * lead / (2*pi*eta).  The 2*pi converts linear lead to angular
@@ -35,12 +37,12 @@ class Mechatronics:
 
         :param thrust_force: required axial thrust force [N]
         :param lead: screw lead [m] (note: metres here, not mm)
-        :param efficiency: screw efficiency 0..1, defaults to 0.9
+        :param efficiency: screw efficiency 0..1, defaults to 0.9 [-]
         :returns: required torque [N*m]
         """
         return thrust_force * lead / (2 * math.pi * efficiency)
 
-    def motor_power(self, *, torque, speed_rpm):
+    def motor_power(self, *, torque: float, speed_rpm: float) -> float:
         """Mechanical power from torque and rotational speed.
 
         P = T * omega, where omega = rpm * 2*pi / 60.
@@ -52,7 +54,7 @@ class Mechatronics:
         angular_velocity = speed_rpm * 2 * math.pi / 60.0
         return torque * angular_velocity
 
-    def reflected_inertia(self, *, load_inertia, gear_ratio):
+    def reflected_inertia(self, *, load_inertia: float, gear_ratio: float) -> float:
         """Load inertia as the motor "sees" it through a gearbox.
 
         J_reflected = J_load / ratio^2.  A reduction dramatically shrinks the
@@ -64,7 +66,7 @@ class Mechatronics:
         """
         return load_inertia / gear_ratio**2
 
-    def acceleration_torque(self, *, inertia, angular_acceleration):
+    def acceleration_torque(self, *, inertia: float, angular_acceleration: float) -> float:
         """Torque to angularly accelerate an inertia: T = J * alpha.
 
         The rotational analogue of F = m*a.
@@ -78,27 +80,28 @@ class Mechatronics:
     def calculate_inertia_ratio(
         self,
         *,
-        j_motor,
-        mass,
-        pitch,
-        teeth_motor_pulley,
-        teeth_screw_pulley,
-        j_screw,
-        j_pulley_motor,
-        j_pulley_screw,
-    ):
+        j_motor: float,
+        mass: float,
+        pitch: float,
+        teeth_motor_pulley: int,
+        teeth_screw_pulley: int,
+        j_screw: float,
+        j_pulley_motor: float,
+        j_pulley_screw: float,
+    ) -> dict[str, float]:
         """
         Calculates the inertia ratio of a servomotor driving a ballscrew via a timing belt.
 
         :param j_motor: motor rotor inertia [kg*m^2]
         :param mass: linear mass [kg]
         :param pitch: ballscrew pitch [m/rev]
-        :param teeth_motor_pulley: number of teeth on the motor pulley
-        :param teeth_screw_pulley: number of teeth on the ballscrew pulley
+        :param teeth_motor_pulley: number of teeth on the motor pulley [-]
+        :param teeth_screw_pulley: number of teeth on the ballscrew pulley [-]
         :param j_screw: ballscrew inertia [kg*m^2]
         :param j_pulley_motor: motor pulley inertia [kg*m^2]
         :param j_pulley_screw: ballscrew pulley inertia [kg*m^2]
-        :returns: dictionary containing inertia ratio, total load inertia, and reduction ratio
+        :returns: dict with ``inertia_ratio`` [-], ``j_load_total`` [kg*m^2],
+            and ``reduction_ratio`` [-]
         """
         # 1. Calculate the mechanical reduction ratio of the timing belt
         reduction_ratio = teeth_screw_pulley / teeth_motor_pulley
@@ -127,8 +130,14 @@ class Mechatronics:
         }
 
     def _calculate_acceleration_torque(
-        self, *, j_total, j_motor, linear_acceleration, pitch, reduction_ratio
-    ):
+        self,
+        *,
+        j_total: float,
+        j_motor: float,
+        linear_acceleration: float,
+        pitch: float,
+        reduction_ratio: float,
+    ) -> float:
         """
         Uses linear acceleration to find the required motor acceleration torque.
 
@@ -136,7 +145,7 @@ class Mechatronics:
         :param j_motor: motor rotor inertia [kg*m^2]
         :param linear_acceleration: linear acceleration [m/s^2]
         :param pitch: ballscrew pitch [m/rev]
-        :param reduction_ratio: mechanical reduction ratio
+        :param reduction_ratio: mechanical reduction ratio [-]
         :returns: required acceleration torque [N*m]
         """
         total_system_inertia = j_total + j_motor

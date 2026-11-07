@@ -15,6 +15,14 @@ Abbreviations used throughout:
 """
 
 import math
+from typing import Literal
+
+# The keys of the lookup tables below, spelled out as ``Literal`` types so a
+# caller (or an AI tool schema) knows the exact strings that are accepted.
+GridRatio = Literal["none", "5:1", "6:1", "8:1", "12:1", "16:1"]
+GeneratorType = Literal[
+    "single_phase", "three_phase_6_pulse", "three_phase_12_pulse", "high_frequency"
+]
 
 
 class Radiography:
@@ -44,7 +52,7 @@ class Radiography:
     # ------------------------------------------------------------------
     # Exposure factors
     # ------------------------------------------------------------------
-    def mas(self, *, tube_current_ma, exposure_time_s):
+    def mas(self, *, tube_current_ma: float, exposure_time_s: float) -> float:
         """Tube current-time product mAs = mA * s.
 
         mAs sets the QUANTITY of x-ray photons. Reciprocity says 200 mA x 0.1 s
@@ -57,7 +65,9 @@ class Radiography:
         """
         return tube_current_ma * exposure_time_s
 
-    def fifteen_percent_rule(self, *, kvp, mas, steps=1):
+    def fifteen_percent_rule(
+        self, *, kvp: float, mas: float, steps: int = 1
+    ) -> tuple[float, float]:
         """Trade kVp for mAs while keeping the same exposure to the IR.
 
         Raising kVp by 15% roughly doubles the exposure reaching the detector,
@@ -66,37 +76,41 @@ class Radiography:
         lowers patient dose but also lowers subject contrast.
 
         :param kvp: starting peak tube voltage [kVp]
-        :param mas: starting mAs
-        :param steps: number of 15% adjustments (+ raises kVp, - lowers it)
-        :returns: tuple (new kVp, new mAs)
+        :param mas: starting mAs [mA*s]
+        :param steps: number of 15% adjustments (+ raises kVp, - lowers it) [-]
+        :returns: tuple (new kVp, new mAs) [kVp, mA*s]
         """
         new_kvp = kvp * 1.15**steps
         new_mas = mas / 2**steps
         return new_kvp, new_mas
 
-    def exposure_maintenance_mas(self, *, original_mas, original_sid, new_sid):
+    def exposure_maintenance_mas(
+        self, *, original_mas: float, original_sid: float, new_sid: float
+    ) -> float:
         """Density/exposure maintenance formula:  mAs2 = mAs1 * (SID2 / SID1)^2.
 
         The inverse square law in reverse: moving the tube further away spreads
         the beam out, so the mAs must rise by the square of the distance ratio
         to keep the same detector exposure.
 
-        :param original_mas: mAs used at the original SID
-        :param original_sid: original source-to-image distance (any length unit)
-        :param new_sid: new SID (same unit)
-        :returns: new mAs
+        :param original_mas: mAs used at the original SID [mA*s]
+        :param original_sid: original source-to-image distance [any length unit]
+        :param new_sid: new SID [same unit as original_sid]
+        :returns: new mAs [mA*s]
         """
         return original_mas * (new_sid / original_sid) ** 2
 
-    def grid_mas(self, *, original_mas, original_grid, new_grid):
+    def grid_mas(
+        self, *, original_mas: float, original_grid: GridRatio, new_grid: GridRatio
+    ) -> float:
         """mAs compensation when adding, removing, or changing a grid.
 
         mAs2 = mAs1 * GCF2 / GCF1, with GCF from :attr:`GRID_CONVERSION_FACTORS`.
 
-        :param original_mas: mAs used with the original grid
+        :param original_mas: mAs used with the original grid [mA*s]
         :param original_grid: grid ratio key, e.g. "none" or "12:1"
         :param new_grid: grid ratio key for the new setup
-        :returns: new mAs
+        :returns: new mAs [mA*s]
         """
         factors = self.GRID_CONVERSION_FACTORS
         for grid in (original_grid, new_grid):
@@ -105,8 +119,14 @@ class Radiography:
         return original_mas * factors[new_grid] / factors[original_grid]
 
     def heat_units(
-        self, *, kvp, tube_current_ma, exposure_time_s, generator="high_frequency", exposures=1
-    ):
+        self,
+        *,
+        kvp: float,
+        tube_current_ma: float,
+        exposure_time_s: float,
+        generator: GeneratorType = "high_frequency",
+        exposures: int = 1,
+    ) -> float:
         """Anode heat load in heat units:  HU = kVp * mA * s * C * exposures.
 
         Used with the tube rating chart to check a series of exposures (e.g. a
@@ -116,7 +136,7 @@ class Radiography:
         :param tube_current_ma: tube current [mA]
         :param exposure_time_s: time per exposure [s]
         :param generator: key of :attr:`GENERATOR_HEAT_FACTORS`
-        :param exposures: number of exposures in the series
+        :param exposures: number of exposures in the series [-]
         :returns: heat units [HU]
         """
         if generator not in self.GENERATOR_HEAT_FACTORS:
@@ -127,31 +147,31 @@ class Radiography:
     # ------------------------------------------------------------------
     # Geometry
     # ------------------------------------------------------------------
-    def magnification_factor(self, *, sid, sod):
+    def magnification_factor(self, *, sid: float, sod: float) -> float:
         """Magnification factor MF = SID / SOD  (always >= 1).
 
         Anatomy far from the detector is projected larger - which is why a PA
         chest makes the heart look smaller than an AP chest.
 
-        :param sid: source-to-image distance (any length unit)
-        :param sod: source-to-object distance (same unit)
+        :param sid: source-to-image distance [any length unit]
+        :param sod: source-to-object distance [same unit as sid]
         :returns: magnification factor [-]
         """
         if sod <= 0 or sod > sid:
             raise ValueError("need 0 < SOD <= SID (the object sits between tube and detector)")
         return sid / sod
 
-    def object_size(self, *, image_size, sid, sod):
+    def object_size(self, *, image_size: float, sid: float, sod: float) -> float:
         """True anatomical size from a measured image:  object = image / MF.
 
-        :param image_size: size measured on the image (any length unit)
-        :param sid: source-to-image distance
-        :param sod: source-to-object distance
-        :returns: true object size, same unit as ``image_size``
+        :param image_size: size measured on the image [any length unit]
+        :param sid: source-to-image distance [any length unit]
+        :param sod: source-to-object distance [same unit as sid]
+        :returns: true object size [same unit as image_size]
         """
         return image_size / self.magnification_factor(sid=sid, sod=sod)
 
-    def geometric_unsharpness(self, *, focal_spot_size, sid, oid):
+    def geometric_unsharpness(self, *, focal_spot_size: float, sid: float, oid: float) -> float:
         """Penumbra (edge blur) width:  Ug = focal spot * OID / SOD.
 
         A real focal spot is not a point, so every edge gets a blurred fringe.
@@ -159,8 +179,8 @@ class Radiography:
         detector (small OID).
 
         :param focal_spot_size: effective focal spot size [mm]
-        :param sid: source-to-image distance (any length unit)
-        :param oid: object-to-image distance (same unit as SID)
+        :param sid: source-to-image distance [any length unit]
+        :param oid: object-to-image distance [same unit as sid]
         :returns: geometric unsharpness [mm]
         """
         sod = sid - oid
@@ -171,7 +191,7 @@ class Radiography:
     # ------------------------------------------------------------------
     # Digital detectors
     # ------------------------------------------------------------------
-    def nyquist_limit(self, *, pixel_pitch_mm):
+    def nyquist_limit(self, *, pixel_pitch_mm: float) -> float:
         """Highest resolvable spatial frequency of a digital detector.
 
         One line pair (a dark + a bright line) needs at least two pixels, so
@@ -182,15 +202,17 @@ class Radiography:
         """
         return 1.0 / (2.0 * pixel_pitch_mm)
 
-    def exposure_index_deviation(self, *, exposure_index, target_exposure_index):
+    def exposure_index_deviation(
+        self, *, exposure_index: float, target_exposure_index: float
+    ) -> float:
         """Deviation index DI = 10 * log10(EI / EI_target)  (IEC 62494-1).
 
         A vendor-neutral check on whether a digital image was over- or
         under-exposed. DI = 0 is on target; +1 is ~26% too much, +3 is double.
         Rule of thumb: |DI| <= 1 is acceptable; DI > +3 is a dose problem.
 
-        :param exposure_index: EI reported by the detector
-        :param target_exposure_index: EI_T set for this exam/body part
+        :param exposure_index: EI reported by the detector [-]
+        :param target_exposure_index: EI_T set for this exam/body part [-]
         :returns: deviation index [-]
         """
         return 10.0 * math.log10(exposure_index / target_exposure_index)

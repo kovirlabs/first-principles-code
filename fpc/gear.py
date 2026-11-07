@@ -12,7 +12,7 @@ a ratio, and how to combine stages into an overall powertrain ratio.
 class Gear:
     """Gear and powertrain calculations."""
 
-    def pitch_diameter(self, *, teeth, module):
+    def pitch_diameter(self, *, teeth: int, module: float) -> float:
         """Pitch diameter of a spur gear (metric): d = module * teeth.
 
         The ``module`` (mm of pitch diameter per tooth) is the metric measure
@@ -24,7 +24,7 @@ class Gear:
         """
         return module * teeth
 
-    def gear_ratio(self, *, driver_teeth, driven_teeth):
+    def gear_ratio(self, *, driver_teeth: int, driven_teeth: int) -> float:
         """Gear ratio of a meshing pair: ratio = driven / driver.
 
         A ratio > 1 reduces speed and multiplies torque (a reduction).
@@ -35,29 +35,31 @@ class Gear:
         """
         return driven_teeth / driver_teeth
 
-    def output_speed(self, *, input_speed, gear_ratio):
+    def output_speed(self, *, input_speed: float, gear_ratio: float) -> float:
         """Output shaft speed after a ratio: n_out = n_in / ratio.
 
-        :param input_speed: input speed (rpm or rad/s) [-]
+        :param input_speed: input speed, any rotational unit [rpm or rad/s]
         :param gear_ratio: gear ratio [-]
-        :returns: output speed in the same units as input_speed
+        :returns: output speed in the same units as input_speed [rpm or rad/s]
         """
         return input_speed / gear_ratio
 
-    def output_torque(self, *, input_torque, gear_ratio, efficiency=1.0):
+    def output_torque(
+        self, *, input_torque: float, gear_ratio: float, efficiency: float = 1.0
+    ) -> float:
         """Output torque after a ratio: T_out = T_in * ratio * efficiency.
 
         :param input_torque: input torque [N*m]
         :param gear_ratio: gear ratio [-]
-        :param efficiency: mechanical efficiency 0..1, defaults to ideal (1.0)
+        :param efficiency: mechanical efficiency 0..1, defaults to ideal (1.0) [-]
         :returns: output torque [N*m]
         """
         return input_torque * gear_ratio * efficiency
 
-    def powertrain_ratio(self, *, stage_ratios):
+    def powertrain_ratio(self, *, stage_ratios: list[float]) -> float:
         """Overall ratio of gear stages in series (the product of each ratio).
 
-        :param stage_ratios: iterable of individual stage ratios [-]
+        :param stage_ratios: list of individual stage ratios [-]
         :returns: total powertrain ratio [-]
         """
         total = 1.0
@@ -67,7 +69,7 @@ class Gear:
             total *= ratio
         return total
 
-    def center_distance(self, *, module, driver_teeth, driven_teeth):
+    def center_distance(self, *, module: float, driver_teeth: int, driven_teeth: int) -> float:
         """Center distance between two meshing spur gears.
 
         C = module * (N1 + N2) / 2.

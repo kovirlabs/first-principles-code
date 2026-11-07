@@ -8,6 +8,8 @@
 [Ll]ib64
 [Ll]ocal
 [Ss]cripts
+# ...but the project's own scripts/ folder (python_support.py) is source code.
+!/scripts/
 pyvenv.cfg
 .venv
 pip-selfcheck.json

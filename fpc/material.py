@@ -15,7 +15,7 @@ import math
 class Material:
     """Strength-of-materials and material-property calculations."""
 
-    def stress(self, *, force, area):
+    def stress(self, *, force: float, area: float) -> float:
         """Engineering stress: sigma = F / A.
 
         :param force: applied axial force [N]
@@ -24,7 +24,7 @@ class Material:
         """
         return force / area
 
-    def strain(self, *, change_in_length, original_length):
+    def strain(self, *, change_in_length: float, original_length: float) -> float:
         """Engineering strain: epsilon = dL / L0 (dimensionless).
 
         :param change_in_length: change in length dL [m]
@@ -33,7 +33,7 @@ class Material:
         """
         return change_in_length / original_length
 
-    def youngs_modulus(self, *, stress, strain):
+    def youngs_modulus(self, *, stress: float, strain: float) -> float:
         """Young's modulus (stiffness) from Hooke's law: E = sigma / strain.
 
         :param stress: applied stress [Pa]
@@ -42,7 +42,9 @@ class Material:
         """
         return stress / strain
 
-    def axial_deformation(self, *, force, length, area, modulus):
+    def axial_deformation(
+        self, *, force: float, length: float, area: float, modulus: float
+    ) -> float:
         """Axial stretch/compression of a bar: dL = F*L / (A*E).
 
         :param force: axial force [N]
@@ -53,7 +55,7 @@ class Material:
         """
         return force * length / (area * modulus)
 
-    def bending_stress(self, *, moment, distance, moment_of_inertia):
+    def bending_stress(self, *, moment: float, distance: float, moment_of_inertia: float) -> float:
         """Bending (flexural) stress in a beam: sigma = M*c / I.
 
         :param moment: bending moment M [N*m]
@@ -63,7 +65,9 @@ class Material:
         """
         return moment * distance / moment_of_inertia
 
-    def thermal_expansion(self, *, coefficient, original_length, delta_temperature):
+    def thermal_expansion(
+        self, *, coefficient: float, original_length: float, delta_temperature: float
+    ) -> float:
         """Length change from temperature: dL = alpha * L0 * dT.
 
         :param coefficient: linear expansion coefficient alpha [1/K]
@@ -73,7 +77,14 @@ class Material:
         """
         return coefficient * original_length * delta_temperature
 
-    def euler_buckling_load(self, *, modulus, moment_of_inertia, length, end_factor=1.0):
+    def euler_buckling_load(
+        self,
+        *,
+        modulus: float,
+        moment_of_inertia: float,
+        length: float,
+        end_factor: float = 1.0,
+    ) -> float:
         """Critical buckling load of a slender column (Euler's formula).
 
         P_cr = pi^2 * E * I / (K*L)^2.
@@ -82,7 +93,7 @@ class Material:
         :param moment_of_inertia: smallest second moment of area I [m^4]
         :param length: unsupported column length L [m]
         :param end_factor: effective-length factor K (1.0 pinned-pinned,
-            0.5 fixed-fixed, 2.0 fixed-free), defaults to pinned-pinned
+            0.5 fixed-fixed, 2.0 fixed-free), defaults to pinned-pinned [-]
         :returns: critical axial load [N]
         """
         effective_length = end_factor * length

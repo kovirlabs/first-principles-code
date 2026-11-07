@@ -14,7 +14,7 @@ import math
 class Electrical:
     """Electrical engineering helpers."""
 
-    def ohms_law_voltage(self, *, current, resistance):
+    def ohms_law_voltage(self, *, current: float, resistance: float) -> float:
         """Voltage from Ohm's law: V = I * R.
 
         :param current: current I [A]
@@ -23,7 +23,7 @@ class Electrical:
         """
         return current * resistance
 
-    def power(self, *, voltage, current):
+    def power(self, *, voltage: float, current: float) -> float:
         """Electrical power: P = V * I.
 
         :param voltage: voltage V [V]
@@ -32,7 +32,7 @@ class Electrical:
         """
         return voltage * current
 
-    def series_resistance(self, *, resistances):
+    def series_resistance(self, *, resistances: list[float]) -> float:
         """Total resistance of resistors in series (they simply add).
 
         :param resistances: iterable of resistances [ohm]
@@ -40,7 +40,7 @@ class Electrical:
         """
         return sum(resistances)
 
-    def parallel_resistance(self, *, resistances):
+    def parallel_resistance(self, *, resistances: list[float]) -> float:
         """Total resistance of resistors in parallel.
 
         1/R_total = sum(1/R_i). The result is always smaller than the smallest
@@ -53,7 +53,7 @@ class Electrical:
         reciprocal_sum = sum(1.0 / r for r in resistances)
         return 1.0 / reciprocal_sum
 
-    def capacitive_reactance(self, *, frequency, capacitance):
+    def capacitive_reactance(self, *, frequency: float, capacitance: float) -> float:
         """Reactance of a capacitor: Xc = 1 / (2*pi*f*C).
 
         Reactance is the AC equivalent of resistance; it falls as frequency rises.
@@ -64,7 +64,7 @@ class Electrical:
         """
         return 1.0 / (2 * math.pi * frequency * capacitance)
 
-    def inductive_reactance(self, *, frequency, inductance):
+    def inductive_reactance(self, *, frequency: float, inductance: float) -> float:
         """Reactance of an inductor: Xl = 2*pi*f*L.
 
         :param frequency: signal frequency f [Hz]
@@ -73,7 +73,7 @@ class Electrical:
         """
         return 2 * math.pi * frequency * inductance
 
-    def rc_time_constant(self, *, resistance, capacitance):
+    def rc_time_constant(self, *, resistance: float, capacitance: float) -> float:
         """Time constant of an RC circuit: tau = R * C.
 
         After one tau the capacitor reaches ~63% of its final voltage; after

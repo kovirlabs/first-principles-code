@@ -15,7 +15,7 @@ import math
 class Statics:
     """Common statics calculations for bodies in equilibrium."""
 
-    def moment(self, *, force, distance):
+    def moment(self, *, force: float, distance: float) -> float:
         """Moment (torque) of a force about a point: M = F * d.
 
         ``distance`` is the perpendicular distance (moment arm) from the pivot
@@ -27,7 +27,7 @@ class Statics:
         """
         return force * distance
 
-    def resultant_2d(self, *, fx, fy):
+    def resultant_2d(self, *, fx: float, fy: float) -> tuple[float, float]:
         """Combine perpendicular force components into magnitude and direction.
 
         :param fx: force component along x [N]
@@ -38,7 +38,9 @@ class Statics:
         angle_deg = math.degrees(math.atan2(fy, fx))
         return magnitude, angle_deg
 
-    def beam_reactions_point_load(self, *, span, load, load_position):
+    def beam_reactions_point_load(
+        self, *, span: float, load: float, load_position: float
+    ) -> tuple[float, float]:
         """Support reactions for a simply supported beam with one point load.
 
         The beam rests on a pin at the left (A) and a roller at the right (B).
@@ -55,7 +57,7 @@ class Statics:
         reaction_a = load - reaction_b
         return reaction_a, reaction_b
 
-    def axial_stress(self, *, force, area):
+    def axial_stress(self, *, force: float, area: float) -> float:
         """Normal (axial) stress: sigma = F / A.
 
         :param force: axial force [N]
@@ -64,18 +66,18 @@ class Statics:
         """
         return force / area
 
-    def factor_of_safety(self, *, strength, applied_stress):
+    def factor_of_safety(self, *, strength: float, applied_stress: float) -> float:
         """Factor of safety: FoS = material strength / applied stress.
 
         A value above 1 means the part can carry more than it currently sees.
 
         :param strength: allowable or yield strength [Pa]
         :param applied_stress: actual working stress [Pa]
-        :returns: dimensionless factor of safety
+        :returns: dimensionless factor of safety [-]
         """
         return strength / applied_stress
 
-    def friction_force(self, *, coefficient, normal_force):
+    def friction_force(self, *, coefficient: float, normal_force: float) -> float:
         """Maximum dry friction force: F = mu * N.
 
         :param coefficient: coefficient of friction mu [-]

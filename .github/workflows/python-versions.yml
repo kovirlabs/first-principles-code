@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Evan Gress
+#
+# Monthly reminder to ratchet the supported Python versions.
+#
+# Runs scripts/python_support.py status, which compares pyproject.toml with
+# CPython's published release and end-of-life dates. When a new Python is out,
+# or the oldest one we support has reached end-of-life, it opens (or updates) a
+# GitHub issue with the exact commands to run. Policy: docs/python-versions.md.
+
+name: python-versions
+
+on:
+  schedule:
+    - cron: "17 6 1 * *" # 06:17 UTC on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # to open the reminder issue
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      # The script exits 1 when action is needed; capture that instead of
+      # failing the job, and keep its report for the issue body.
+      - name: Compare with CPython's support schedule
+        id: status
+        run: |
+          set +e
+          uv run --no-project scripts/python_support.py status > report.txt
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat report.txt
+
+      - name: Open or update the reminder issue
+        if: steps.status.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "Update supported Python versions"
+        run: |
+          existing=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file report.txt
+          else
+            gh issue create --title "$TITLE" --body-file report.txt
+          fi
+
+      - name: Fail on unexpected errors
+        if: steps.status.outputs.code != '0' && steps.status.outputs.code != '1'
+        run: exit 1

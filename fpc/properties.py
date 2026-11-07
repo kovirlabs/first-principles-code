@@ -29,31 +29,34 @@ Example::
 
 from functools import cache
 from importlib import resources
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from scipy.interpolate import CubicSpline
+
+from fpc.hints import ArrayLike, FloatArray
 
 
 class Properties:
     """Reference-table lookups (water, materials, steel sections) with interpolation."""
 
     # The tables shipped in fpc/data/, keyed by a short name.
-    TABLES = {
+    TABLES: dict[str, str] = {
         "water_saturation": "water_saturation.csv",
         "water_liquid_1atm": "water_liquid_1atm.csv",
         "materials": "materials.csv",
         "w_shapes": "w_shapes.csv",
     }
 
-    def list_tables(self):
+    def list_tables(self) -> list[str]:
         """Return the names of the available reference tables.
 
         :returns: list of table names you can pass to :meth:`load_table`
         """
         return list(self.TABLES)
 
-    def load_table(self, *, name):
+    def load_table(self, *, name: str) -> pd.DataFrame:
         """Load one reference table as a pandas DataFrame.
 
         A DataFrame is a spreadsheet-like table: named columns, numbered rows.
@@ -70,7 +73,18 @@ class Properties:
         return _read_table(self.TABLES[name]).copy()
 
     # --- Interpolation ----------------------------------------------------
-    def interpolate(self, *, table, x_column, y_column, x, method="linear"):
+    # ``Literal["linear", "cubic"]`` below spells out the only two accepted
+    # strings, so mypy (and the AI tool schema built from these hints) can
+    # reject a typo like "cubc" before the code ever runs.
+    def interpolate(
+        self,
+        *,
+        table: str | pd.DataFrame,
+        x_column: str,
+        y_column: str,
+        x: ArrayLike,
+        method: Literal["linear", "cubic"] = "linear",
+    ) -> float | FloatArray:
         """Interpolate ``y_column`` at ``x`` using any loaded table.
 
         This is the general tool the water lookups below are built on.
@@ -79,9 +93,11 @@ class Properties:
         :param x_column: the column to look up by (must be increasing)
         :param y_column: the column whose value you want
         :param x: the lookup value - a number or a NumPy array of numbers
+            [units of ``x_column``]
         :param method: ``"linear"`` (np.interp, like reading a printed table by
             hand) or ``"cubic"`` (scipy CubicSpline, smoother for curved data)
         :returns: the interpolated value(s), same shape as ``x``
+            [units of ``y_column``]
         :raises ValueError: if ``x`` is outside the table (we refuse to
             extrapolate, because guessing beyond the data is a common source
             of silently wrong answers)
@@ -94,8 +110,11 @@ class Properties:
         # end values, and a spline would happily invent numbers.
         x_array = np.asarray(x, dtype=float)
         if np.any(x_array < xs.min()) or np.any(x_array > xs.max()):
+            # ArrayLike technically includes bytes, which mypy warns about in
+            # an f-string; x is always numeric here (np.asarray(dtype=float)
+            # above would already have failed otherwise).
             raise ValueError(
-                f"{x_column}={x} is outside the table range "
+                f"{x_column}={x} is outside the table range "  # type: ignore[str-bytes-safe]
                 f"[{xs.min()}, {xs.max()}]; refusing to extrapolate"
             )
 
@@ -108,7 +127,13 @@ class Properties:
         # Hand back a plain float for a scalar input, an array otherwise.
         return float(result) if result.ndim == 0 else result
 
-    def water_saturation(self, *, temperature_c, property, method="linear"):
+    def water_saturation(
+        self,
+        *,
+        temperature_c: ArrayLike,
+        property: str,
+        method: Literal["linear", "cubic"] = "linear",
+    ) -> float | FloatArray:
         """Saturated-water property at a temperature (a steam-table lookup).
 
         Columns: ``pressure_kpa``, ``density_liquid_kg_m3``,
@@ -118,7 +143,7 @@ class Properties:
         :param temperature_c: temperature [degC], 0.01 to 200
         :param property: one of the column names above
         :param method: ``"linear"`` or ``"cubic"``
-        :returns: the property value in the units named by the column
+        :returns: the property value [units named by the column]
         """
         return self.interpolate(
             table="water_saturation",
@@ -128,7 +153,13 @@ class Properties:
             method=method,
         )
 
-    def water_liquid(self, *, temperature_c, property, method="linear"):
+    def water_liquid(
+        self,
+        *,
+        temperature_c: ArrayLike,
+        property: str,
+        method: Literal["linear", "cubic"] = "linear",
+    ) -> float | FloatArray:
         """Liquid water property at 1 atm and a given temperature.
 
         Columns: ``density_kg_m3``, ``dynamic_viscosity_pa_s``,
@@ -137,7 +168,7 @@ class Properties:
         :param temperature_c: temperature [degC], 1 to 99
         :param property: one of the column names above
         :param method: ``"linear"`` or ``"cubic"``
-        :returns: the property value in the units named by the column
+        :returns: the property value [units named by the column]
         """
         return self.interpolate(
             table="water_liquid_1atm",
@@ -148,7 +179,7 @@ class Properties:
         )
 
     # --- Row lookups ------------------------------------------------------
-    def material(self, *, name):
+    def material(self, *, name: str) -> dict[str, Any]:
         """Return one material's properties as a plain dictionary.
 
         :param name: the ``name`` column value, e.g. ``"steel_a36"``
@@ -161,9 +192,10 @@ class Properties:
         match = frame[frame["name"] == name]
         if match.empty:
             raise ValueError(f"unknown material {name!r}; choose from {list(frame['name'])}")
-        return match.iloc[0].to_dict()
+        # pandas types row labels as Hashable; our CSV headers are always str.
+        return match.iloc[0].to_dict()  # type: ignore[return-value]
 
-    def lightest_w_shape(self, *, required_sx_in3):
+    def lightest_w_shape(self, *, required_sx_in3: float) -> dict[str, Any]:
         """Pick the lightest AISC W-shape with enough section modulus.
 
         Beam selection in one pandas chain: filter to sections that are strong
@@ -179,11 +211,12 @@ class Properties:
             raise ValueError(f"no W-shape in the table has Sx >= {required_sx_in3} in^3")
         # Sort by weight, then by Sx (descending) so ties go to the stronger beam.
         best = candidates.sort_values(["weight_lb_ft", "sx_in3"], ascending=[True, False]).iloc[0]
-        return best.to_dict()
+        # pandas types row labels as Hashable; our CSV headers are always str.
+        return best.to_dict()  # type: ignore[return-value]
 
 
 @cache
-def _read_table(file_name):
+def _read_table(file_name: str) -> pd.DataFrame:
     """Read a CSV from the package's data folder (cached after the first read).
 
     ``importlib.resources`` finds files *inside an installed package*, so this

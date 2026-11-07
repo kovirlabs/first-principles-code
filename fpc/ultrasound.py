@@ -11,6 +11,11 @@ velocity from the frequency shift of moving red cells.
 """
 
 import math
+from typing import Literal
+
+# Names of the media in :attr:`Ultrasound.MEDIA`, as a ``Literal`` type so the
+# accepted strings are part of the method signature itself.
+Medium = Literal["air", "fat", "water", "soft_tissue", "liver", "muscle", "bone"]
 
 
 class Ultrasound:
@@ -30,7 +35,7 @@ class Ultrasound:
         "bone": {"density": 1900.0, "speed": 4080.0},
     }
 
-    def wavelength(self, *, frequency_mhz, speed=SOFT_TISSUE_SPEED):
+    def wavelength(self, *, frequency_mhz: float, speed: float = SOFT_TISSUE_SPEED) -> float:
         """Wavelength  lambda = c / f.
 
         :param frequency_mhz: transducer frequency [MHz]
@@ -40,19 +45,19 @@ class Ultrasound:
         # Work in SI (m/s divided by Hz gives metres), then convert m -> mm.
         return speed / (frequency_mhz * 1e6) * 1000.0
 
-    def echo_depth(self, *, round_trip_time_us, speed=SOFT_TISSUE_SPEED):
+    def echo_depth(self, *, round_trip_time_us: float, speed: float = SOFT_TISSUE_SPEED) -> float:
         """Reflector depth from echo time:  d = c * t / 2.
 
         Divide by two because the pulse travels down AND back. This "13 us per
         cm" rule is hard-wired into every scanner.
 
-        :param round_trip_time_us: time from pulse to echo [microseconds]
+        :param round_trip_time_us: time from pulse to echo [us]
         :param speed: speed of sound [m/s]
         :returns: depth [cm]
         """
         return speed * round_trip_time_us * 1e-6 / 2.0 * 100.0
 
-    def acoustic_impedance(self, *, density, speed):
+    def acoustic_impedance(self, *, density: float, speed: float) -> float:
         """Acoustic impedance  Z = rho * c  [rayl = kg/(m^2*s)].
 
         :param density: density [kg/m^3]
@@ -61,7 +66,7 @@ class Ultrasound:
         """
         return density * speed
 
-    def intensity_reflection_coefficient(self, *, impedance_1, impedance_2):
+    def intensity_reflection_coefficient(self, *, impedance_1: float, impedance_2: float) -> float:
         """Fraction of intensity reflected at a boundary:  R = ((Z2-Z1)/(Z2+Z1))^2.
 
         Soft-tissue/soft-tissue boundaries reflect < 1% (good: the beam carries
@@ -70,11 +75,11 @@ class Ultrasound:
 
         :param impedance_1: Z of the first medium [rayl]
         :param impedance_2: Z of the second medium [rayl]
-        :returns: reflected fraction R [0..1]
+        :returns: reflected fraction R, 0..1 [-]
         """
         return ((impedance_2 - impedance_1) / (impedance_2 + impedance_1)) ** 2
 
-    def reflection_between(self, *, medium_1, medium_2):
+    def reflection_between(self, *, medium_1: Medium, medium_2: Medium) -> float:
         """Reflection coefficient between two named media from :attr:`MEDIA`.
 
         A convenience wrapper that chains the two methods above - a small
@@ -82,13 +87,19 @@ class Ultrasound:
 
         :param medium_1: name of the first medium, e.g. "soft_tissue"
         :param medium_2: name of the second medium, e.g. "air"
-        :returns: reflected intensity fraction R [0..1]
+        :returns: reflected intensity fraction R, 0..1 [-]
         """
         z1 = self.acoustic_impedance(**self.MEDIA[medium_1])
         z2 = self.acoustic_impedance(**self.MEDIA[medium_2])
         return self.intensity_reflection_coefficient(impedance_1=z1, impedance_2=z2)
 
-    def attenuation_db(self, *, frequency_mhz, path_length_cm, coefficient_db_per_cm_mhz=0.5):
+    def attenuation_db(
+        self,
+        *,
+        frequency_mhz: float,
+        path_length_cm: float,
+        coefficient_db_per_cm_mhz: float = 0.5,
+    ) -> float:
         """Total attenuation  A = alpha * f * L  [dB].
 
         Soft tissue loses ~0.5 dB per cm per MHz. Higher frequency gives better
@@ -102,19 +113,23 @@ class Ultrasound:
         """
         return coefficient_db_per_cm_mhz * frequency_mhz * path_length_cm
 
-    def axial_resolution(self, *, frequency_mhz, cycles_per_pulse=2, speed=SOFT_TISSUE_SPEED):
+    def axial_resolution(
+        self, *, frequency_mhz: float, cycles_per_pulse: int = 2, speed: float = SOFT_TISSUE_SPEED
+    ) -> float:
         """Axial resolution = spatial pulse length / 2 = n * lambda / 2.
 
         Two reflectors along the beam closer than this blur into one echo.
 
         :param frequency_mhz: frequency [MHz]
-        :param cycles_per_pulse: number of cycles in each pulse
+        :param cycles_per_pulse: number of cycles in each pulse [-]
         :param speed: speed of sound [m/s]
         :returns: axial resolution [mm]
         """
         return cycles_per_pulse * self.wavelength(frequency_mhz=frequency_mhz, speed=speed) / 2.0
 
-    def maximum_depth(self, *, pulse_repetition_frequency_hz, speed=SOFT_TISSUE_SPEED):
+    def maximum_depth(
+        self, *, pulse_repetition_frequency_hz: float, speed: float = SOFT_TISSUE_SPEED
+    ) -> float:
         """Deepest unambiguous echo for a given PRF:  d_max = c / (2 * PRF).
 
         Each echo must return before the next pulse is fired, so imaging deeper
@@ -127,8 +142,13 @@ class Ultrasound:
         return speed / (2.0 * pulse_repetition_frequency_hz) * 100.0
 
     def doppler_shift(
-        self, *, transmitted_frequency_mhz, velocity, angle_deg, speed=SOFT_TISSUE_SPEED
-    ):
+        self,
+        *,
+        transmitted_frequency_mhz: float,
+        velocity: float,
+        angle_deg: float,
+        speed: float = SOFT_TISSUE_SPEED,
+    ) -> float:
         """Doppler frequency shift  df = 2 * f0 * v * cos(theta) / c.
 
         :param transmitted_frequency_mhz: transmitted frequency f0 [MHz]
@@ -141,8 +161,13 @@ class Ultrasound:
         return 2.0 * f0_hz * velocity * math.cos(math.radians(angle_deg)) / speed
 
     def doppler_velocity(
-        self, *, transmitted_frequency_mhz, doppler_shift_hz, angle_deg, speed=SOFT_TISSUE_SPEED
-    ):
+        self,
+        *,
+        transmitted_frequency_mhz: float,
+        doppler_shift_hz: float,
+        angle_deg: float,
+        speed: float = SOFT_TISSUE_SPEED,
+    ) -> float:
         """Blood velocity from a measured Doppler shift (the inverse problem).
 
         v = df * c / (2 * f0 * cos(theta)). Because cos(theta) sits in the

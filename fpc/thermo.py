@@ -18,7 +18,7 @@ class Thermo:
     # Universal gas constant [J/(mol*K)].
     R_UNIVERSAL = 8.314462618
 
-    def ideal_gas_pressure(self, *, moles, temperature, volume):
+    def ideal_gas_pressure(self, *, moles: float, temperature: float, volume: float) -> float:
         """Pressure from the ideal gas law: P = n*R*T / V.
 
         Temperatures MUST be absolute (kelvin) - a common beginner mistake is
@@ -31,7 +31,9 @@ class Thermo:
         """
         return moles * self.R_UNIVERSAL * temperature / volume
 
-    def sensible_heat(self, *, mass, specific_heat, delta_temperature):
+    def sensible_heat(
+        self, *, mass: float, specific_heat: float, delta_temperature: float
+    ) -> float:
         """Heat to change a substance's temperature: Q = m*c*dT.
 
         :param mass: mass [kg]
@@ -41,7 +43,9 @@ class Thermo:
         """
         return mass * specific_heat * delta_temperature
 
-    def conduction_heat_rate(self, *, conductivity, area, delta_temperature, thickness):
+    def conduction_heat_rate(
+        self, *, conductivity: float, area: float, delta_temperature: float, thickness: float
+    ) -> float:
         """Steady heat conduction through a wall (Fourier's law).
 
         Q_dot = k * A * dT / L.
@@ -54,7 +58,9 @@ class Thermo:
         """
         return conductivity * area * delta_temperature / thickness
 
-    def convection_heat_rate(self, *, coefficient, area, delta_temperature):
+    def convection_heat_rate(
+        self, *, coefficient: float, area: float, delta_temperature: float
+    ) -> float:
         """Convective heat transfer (Newton's law of cooling).
 
         Q_dot = h * A * dT.
@@ -66,18 +72,18 @@ class Thermo:
         """
         return coefficient * area * delta_temperature
 
-    def carnot_efficiency(self, *, hot_temperature, cold_temperature):
+    def carnot_efficiency(self, *, hot_temperature: float, cold_temperature: float) -> float:
         """Maximum possible efficiency of a heat engine: 1 - Tc/Th.
 
         Both temperatures are absolute (kelvin). No real engine can beat this.
 
         :param hot_temperature: hot reservoir temperature Th [K]
         :param cold_temperature: cold reservoir temperature Tc [K]
-        :returns: efficiency as a fraction between 0 and 1
+        :returns: efficiency as a fraction between 0 and 1 [-]
         """
         return 1 - (cold_temperature / hot_temperature)
 
-    def celsius_to_kelvin(self, *, celsius):
+    def celsius_to_kelvin(self, *, celsius: float) -> float:
         """Convert temperature from degrees Celsius to kelvin.
 
         :param celsius: temperature [degC]
@@ -85,7 +91,7 @@ class Thermo:
         """
         return celsius + 273.15
 
-    def log_mean_temperature_difference(self, *, delta_t_1, delta_t_2):
+    def log_mean_temperature_difference(self, *, delta_t_1: float, delta_t_2: float) -> float:
         """Log-mean temperature difference (LMTD) for a heat exchanger.
 
         LMTD = (dT1 - dT2) / ln(dT1 / dT2), where dT1 and dT2 are the hot-cold

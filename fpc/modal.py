@@ -19,11 +19,13 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import curve_fit
 
+from fpc.hints import ArrayLike, FloatArray
+
 
 class Modal:
     """Vibration and modal-analysis calculations."""
 
-    def natural_frequency(self, *, stiffness, mass):
+    def natural_frequency(self, *, stiffness: float, mass: float) -> tuple[float, float]:
         """Undamped natural frequency of an SDOF system.
 
         Returns both the angular frequency omega_n = sqrt(k/m) [rad/s] and the
@@ -38,7 +40,7 @@ class Modal:
         f_n = omega_n / (2 * math.pi)
         return omega_n, f_n
 
-    def damping_ratio(self, *, damping, mass, stiffness):
+    def damping_ratio(self, *, damping: float, mass: float, stiffness: float) -> float:
         """Dimensionless damping ratio zeta = c / (2*sqrt(k*m)).
 
         zeta < 1 underdamped (oscillates), = 1 critically damped, > 1 overdamped.
@@ -51,7 +53,7 @@ class Modal:
         critical_damping = 2 * math.sqrt(stiffness * mass)
         return damping / critical_damping
 
-    def damped_natural_frequency(self, *, stiffness, mass, damping):
+    def damped_natural_frequency(self, *, stiffness: float, mass: float, damping: float) -> float:
         """Damped natural frequency omega_d = omega_n * sqrt(1 - zeta^2).
 
         This is the frequency a real (lightly damped) system actually rings at.
@@ -65,7 +67,9 @@ class Modal:
         zeta = self.damping_ratio(damping=damping, mass=mass, stiffness=stiffness)
         return omega_n * math.sqrt(1 - zeta**2)
 
-    def mode_shapes(self, *, mass_matrix, stiffness_matrix):
+    def mode_shapes(
+        self, *, mass_matrix: ArrayLike, stiffness_matrix: ArrayLike
+    ) -> tuple[FloatArray, FloatArray]:
         """Natural frequencies and mode shapes of a multi-DOF system.
 
         Solves the generalized eigenvalue problem  K*phi = omega^2 * M*phi.
@@ -75,7 +79,7 @@ class Modal:
         :param mass_matrix: mass matrix M, shape (n, n) [kg]
         :param stiffness_matrix: stiffness matrix K, shape (n, n) [N/m]
         :returns: tuple (natural_frequencies [Hz] sorted ascending,
-                  mode_shapes as columns of an array)
+                  mode_shapes [-] as columns of an array)
         """
         # Convert inputs to numpy arrays so this works with plain Python lists.
         M = np.asarray(mass_matrix, dtype=float)
@@ -95,14 +99,14 @@ class Modal:
     def simulate_free_vibration(
         self,
         *,
-        mass,
-        stiffness,
-        damping,
-        initial_displacement,
-        initial_velocity=0.0,
-        duration,
-        num_points=500,
-    ):
+        mass: float,
+        stiffness: float,
+        damping: float,
+        initial_displacement: float,
+        initial_velocity: float = 0.0,
+        duration: float,
+        num_points: int = 500,
+    ) -> tuple[FloatArray, FloatArray]:
         """Simulate the free ring-down of an SDOF spring-mass-damper.
 
         Integrates  m*x'' + c*x' + k*x = 0  with ``scipy.integrate.solve_ivp``.
@@ -116,11 +120,11 @@ class Modal:
         :param initial_displacement: starting position x(0) [m]
         :param initial_velocity: starting velocity x'(0) [m/s], defaults to 0
         :param duration: how long to simulate [s]
-        :param num_points: number of evenly spaced output samples
+        :param num_points: number of evenly spaced output samples [-]
         :returns: tuple of numpy arrays (time [s], displacement [m])
         """
 
-        def equations_of_motion(t, state):
+        def equations_of_motion(t: float, state: FloatArray) -> list[float]:
             """d/dt of [x, v] for  x' = v,  v' = -(c*v + k*x)/m."""
             x, v = state
             acceleration = -(damping * v + stiffness * x) / mass
@@ -137,7 +141,9 @@ class Modal:
         # Row 0 of solution.y is displacement; row 1 is velocity.
         return solution.t, solution.y[0]
 
-    def fit_damped_response(self, *, time, displacement, guess_frequency_hz=1.0):
+    def fit_damped_response(
+        self, *, time: ArrayLike, displacement: ArrayLike, guess_frequency_hz: float = 1.0
+    ) -> dict[str, float]:
         """Recover natural frequency and damping ratio from measured ring-down.
 
         Given (time, displacement) samples of a decaying oscillation - say from
@@ -154,7 +160,8 @@ class Modal:
         :param displacement: measured displacement at each time [m]
         :param guess_frequency_hz: rough starting guess for the frequency [Hz],
             which helps curve_fit converge
-        :returns: dict with ``amplitude``, ``damping_ratio``, ``natural_frequency_hz``
+        :returns: dict with ``amplitude`` [m], ``damping_ratio`` [-],
+            ``natural_frequency_hz`` [Hz]
         """
         time = np.asarray(time, dtype=float)
         displacement = np.asarray(displacement, dtype=float)
