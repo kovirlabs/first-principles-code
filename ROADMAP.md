@@ -12,8 +12,9 @@ whole: structure, tooling, docs, and discoverability.
 number next to it. Items marked **(decision needed)** wait on the maintainer's
 call before work starts. Keep items in priority order within each section.
 
-_Last reviewed: 2026-11-07. Sections 0-8 were built in #6 (branch
-`feat/roadmap-buildout`); see "Follow-ups" for what remains._
+_Last reviewed: 2026-11-07. Sections 0-8 were built in #6, most of 9-10 in #8,
+and the rest of 9-11 on branch `feat/roadmap-next`; see "Follow-ups" for what
+remains._
 
 ---
 
@@ -144,13 +145,13 @@ composing the code directly, so for them we document the API compactly.
   `list_domains`, `search_calculations`, `describe_calculation`,
   `calculate`, `list_reference_tables`. Never expose arbitrary code
   execution. Ships as the `mcp` extra: `pip install "first-principles-code[mcp]"`.
-- [ ] **MCP: optional direct tools.** A `--domains fluids,thermo` flag that
-  also exposes those methods as individual tools with their own schemas
-  (better for capable models; the SDK builds schemas from signatures, so
-  this needs a registry-schema -> tool adapter).
-- [ ] **Try the MCP server with real local models** (LM Studio + a Qwen /
-  Llama / Mistral tool-calling model, Open WebUI + Ollama) and tune the tool
-  descriptions and `INSTRUCTIONS` from what goes wrong.
+- [x] **MCP: optional direct tools.** `fpc-mcp --domains fluids,thermo`
+  also serves each of those calculations as its own tool, with the
+  registry's schema.
+- [x] **Try the MCP server with real local models.** Done with Ollama
+  (qwen3:14b, qwen2.5:7b, qwen2.5-coder:14b) through
+  `scripts/try_local_model.py`; results, and the fixes they led to, are in
+  `docs/ai.md`. The LM Studio and Open WebUI apps themselves: see Follow-ups.
 - [x] **`fpc search` / `fpc describe` / `fpc run` CLI subcommands**, driven
   by the registry, so every method is reachable from the terminal.
 - [x] **`llms.txt` + `AGENTS.md`** for coding agents: a generated, compact
@@ -182,22 +183,23 @@ composing the code directly, so for them we document the API compactly.
   across all of them and a ratchet: `scripts/python_support.py`
   (`check` / `status` / `set`) plus a monthly workflow that opens an issue
   when a version is released or retired. See `docs/python-versions.md`.
-- [ ] **Streamlit app generated from the registry**: one form per method,
-  for free, using the existing `apps` dependency group.
+- [x] **Streamlit app generated from the registry**: `apps/calculator.py`,
+  one form per method, with uncertainty and calc-sheet tabs.
 
 ## 11. Trust and day-to-day usefulness
 
-- [ ] **Calc reports.** Export a calculation to Markdown/PDF with the
-  equation, inputs with units, result, and source citation, the way a
-  checked hand calc is filed for review (compare `handcalcs`).
-- [ ] **Worked-example tests with citations.** Tests that reproduce
-  published textbook examples (e.g. "Shigley Ex. 4-7") so users can trust
-  the numbers. Pairs with the data-verification follow-ups below.
-- [ ] **Domain gaps engineers hit daily:** machine elements (bolts, shafts,
-  springs, bearings, welds), fatigue (Goodman/Soderberg), column buckling,
-  psychrometrics/HVAC.
-- [ ] **Uncertainty on any calculation:** a Monte Carlo helper that wraps a
-  registry method and samples its inputs.
+- [x] **Calc reports.** `fpc.report` / `fpc report`: Markdown calc sheet
+  with the method, inputs with units, result, library version and a review
+  checklist (PDF/Word via pandoc).
+- [x] **Worked-example tests with citations** for the new machine-element,
+  fatigue, buckling and psychrometrics methods (ASHRAE Fundamentals tables,
+  Shigley Table 6-5). Older domains: see Follow-ups.
+- [x] **Domain gaps engineers hit daily:** `MachineElements` (bolts, shafts,
+  springs, bearings, welds), `Fatigue` (Marin factors, Goodman, Soderberg,
+  Gerber, ASME-elliptic, S-N), Johnson/Euler column buckling on `Material`,
+  and `Psychrometrics`.
+- [x] **Uncertainty on any calculation:** `fpc.uncertainty.monte_carlo`
+  and `fpc uncertainty`, with intervals and input sensitivity.
 
 ---
 
@@ -211,13 +213,27 @@ Items found while building sections 0-8.
   values are typical published figures but were entered from reference
   knowledge, not copied from a fetched source.
 - [ ] **Verify `fpc/data/w_shapes.csv` against the AISC Shapes Database v16
-  spreadsheet.** A test confirms every row is physically self-consistent
+  spreadsheet.** aisc.org refuses automated downloads, so this needs the
+  spreadsheet downloaded by hand. A test confirms every row is physically self-consistent
   (Sx = Ix/(d/2), weight = 3.4 x A), which catches typos but not a
   consistently wrong row. Extend the table while doing this.
 - [ ] **Plan the move off Material for MkDocs**, which reaches end of life on
   2027-05-05. Its successor, Zensical, reads the existing `mkdocs.yml`.
-- [ ] **Tighten mypy** module by module as type hints are added
-  (`disallow_untyped_defs` per module).
+- [x] **Tighten mypy:** `disallow_untyped_defs` and
+  `disallow_incomplete_defs` for all of `fpc/`.
+- [ ] **Spot-check the equation and table numbers** cited in
+  `fpc/machine_elements.py`, `fpc/fatigue.py` and `fpc/psychrometrics.py`
+  against Shigley 10th ed. and ASHRAE Fundamentals 2017. The values were
+  checked; some equation numbers were written from memory.
+- [ ] **Psychrometrics enhancement factor.** Humidity ratios use the
+  ideal-gas equations and differ from ASHRAE Table 2 by about 0.4 %.
+- [ ] **Cited worked-example tests for the older domains** (Fluids, Thermo,
+  Statics, ...), e.g. Moody-chart friction factors, textbook conduction.
+- [ ] **Try `fpc-mcp` in the LM Studio and Open WebUI apps**, and add more
+  question types to `scripts/try_local_model.py` (Properties lookups,
+  multi-step problems).
+- [ ] **An MCP tool for uncertainty** (`calculate_with_uncertainty`) if
+  model users ask for it; left out for now to keep the tool list at five.
 - [ ] Consider an InSpice row in place of PySpice in `PACKAGES.md` once
   InSpice has a longer release history.
 

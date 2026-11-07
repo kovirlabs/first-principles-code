@@ -31,6 +31,20 @@ five tools, deliberately few so that small models choose well:
 It **cannot** run arbitrary code or read and write files: only the
 calculations catalogued by `fpc.registry` are callable.
 
+### Direct tools for chosen domains
+
+`--domains` also turns every calculation in the named domains into its own
+tool, with its own input schema:
+
+```bash
+fpc-mcp --domains fluids,thermo     # 5 tools + one per Fluids/Thermo calculation
+```
+
+The model can then call `fluids_reynolds_number(density=..., ...)` in one step
+instead of search → describe → calculate. Name only the domains you need:
+every tool's schema is sent to the model with each message, and a long tool
+list costs context and, for small models, accuracy.
+
 ## Install
 
 The server needs the optional `mcp` extra.
@@ -102,6 +116,35 @@ end that is:
 Pick a model trained for tool calling (`ollama pull qwen3`, `llama3.1`,
 `mistral-small`, ...). Very small models (under ~7B parameters) often call
 tools poorly; that is a model limit, not a server one.
+
+## Tested with local models
+
+`scripts/try_local_model.py` plays the part of a chat app: it hands the
+server's tools to an Ollama model, runs six engineering questions with mixed
+units (mm, kN, L/s, mPa·s, µF), and checks each answer against the library.
+
+```bash
+uv run --extra mcp scripts/try_local_model.py --model qwen3:14b --think off
+uv run --extra mcp scripts/try_local_model.py --model qwen3:14b --think off \
+    --domains fluids,thermo,modal,electrical,radiation -v    # -v: full transcripts
+```
+
+Results on 2026-11-07 (Ollama 0.40, temperature 0, Apple silicon):
+
+| Model | 5 general tools | `--domains` direct tools | Notes |
+|---|---|---|---|
+| `qwen3:14b`, thinking off | 6/6 | 6/6 | Recovered from a guessed key and from wrong argument names by reading the error message. |
+| `qwen3:14b`, thinking on | 3/6 | 3/6 | Every tool call was right, but after a tool call Ollama put the final answer in the *thinking* field and left the reply empty. Turn thinking off (`--think off`, or `/no_think` in a chat app). |
+| `qwen2.5:7b` | 5/6 | 4/6 | Sometimes replies with nothing at all; once forgot to convert the cm result to the mm asked for. |
+| `qwen2.5-coder:14b` | 0/6 | 0/6 | Writes the tool call as JSON *text* instead of calling the tool; Ollama's template for this model does not produce native tool calls. Use `qwen3` or `qwen2.5` instead. |
+
+What the first run changed in the server: `qwen2.5:7b` put the inputs beside
+`key` instead of inside `arguments` and retried the same mistake until it gave
+up. The `calculate` description now shows the nesting in its example, and a
+call without `arguments` gets back the exact shape to send.
+
+Every unit conversion in these runs (mm → m, kN → N, mPa·s → Pa·s, µF → F)
+was done correctly by the model; the arithmetic was done by `fpc`.
 
 ## Claude Desktop and Claude Code
 

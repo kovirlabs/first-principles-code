@@ -27,6 +27,8 @@ from typing import Any
 import numpy as np
 from scipy.optimize import brentq, minimize
 
+from fpc.hints import FloatArray
+
 
 class Design:
     """Design-by-calculation helpers: size and optimize simple parts."""
@@ -152,25 +154,25 @@ class Design:
         :raises RuntimeError: if the optimizer fails to find a feasible design
         """
 
-        def mass(x):
+        def mass(x: FloatArray) -> float:
             width, height = x
             return density * width * height * length
 
         # Scale the objective to "about 1" by dividing by the starting mass.
         # Gradient-based optimizers converge far more reliably on well-scaled
         # numbers than on raw values that may be 1e-3 or 1e4.
-        start = [np.mean(width_bounds), np.mean(height_bounds)]
+        start = np.array([np.mean(width_bounds), np.mean(height_bounds)])
         reference_mass = mass(start)
 
-        def scaled_mass(x):
+        def scaled_mass(x: FloatArray) -> float:
             return mass(x) / reference_mass
 
-        def stress_margin(x):
+        def stress_margin(x: FloatArray) -> float:
             width, height = x
             stress = self._bending_stress(load=load, length=length, width=width, height=height)
             return 1 - stress / allowable_stress
 
-        def deflection_margin(x):
+        def deflection_margin(x: FloatArray) -> float:
             width, height = x
             deflection = self._deflection(
                 load=load,
@@ -181,7 +183,7 @@ class Design:
             )
             return 1 - deflection / max_deflection
 
-        def aspect_margin(x):
+        def aspect_margin(x: FloatArray) -> float:
             width, height = x
             return 1 - height / (max_aspect_ratio * width)
 

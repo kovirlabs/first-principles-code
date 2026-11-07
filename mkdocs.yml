@@ -53,6 +53,7 @@ nav:
   - Guides:
       - Units - floats or Pint?: units.md
       - From calculation to tool: building-tools.md
+      - Trusting a result - uncertainty and calc sheets: trusting-results.md
       - Using fpc with AI assistants: ai.md
       - Releasing to PyPI: releasing.md
       - Supported Python versions: python-versions.md
@@ -64,9 +65,12 @@ nav:
           - Material: api/material.md
           - Beam (Pint): api/beam.md
           - Gear: api/gear.md
+          - Machine elements: api/machine_elements.md
+          - Fatigue: api/fatigue.md
       - Thermal and fluids:
           - Thermo: api/thermo.md
           - Fluids: api/fluids.md
+          - Psychrometrics (moist air): api/psychrometrics.md
       - Electrical and controls:
           - Electrical: api/electrical.md
           - Mechatronics: api/mechatronics.md
@@ -79,6 +83,8 @@ nav:
           - fpc command line: api/cli.md
           - Calculation registry: api/registry.md
           - MCP server: api/mcp_server.md
+          - Uncertainty (Monte Carlo): api/uncertainty.md
+          - Calc reports: api/report.md
       - Radiology:
           - Radiation: api/radiation.md
           - Radiography: api/radiography.md

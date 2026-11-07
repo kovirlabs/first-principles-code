@@ -86,6 +86,20 @@ To share it, deploy to [Streamlit Community Cloud](https://streamlit.io/cloud)
 or an internal server. Check your organization's data policy before putting
 engineering data on a public host.
 
+### A form for every calculation
+
+The app above is written by hand for one calculation. [`apps/calculator.py`](https://github.com/kovirlabs/first-principles-code/blob/main/apps/calculator.py)
+builds a form for *every* calculation in the library from the
+[calculation registry](api/registry.md): each input's type and unit decide
+its widget, so a method added tomorrow appears with no change to the app.
+
+```bash
+uv run streamlit run apps/calculator.py
+```
+
+Pick a domain and calculation (or search), fill in the inputs, and see the
+result, its [uncertainty](trusting-results.md) and a downloadable calc sheet.
+
 ## Rung 5: installed command (`[project.scripts]`)
 
 The final step turns the tool into a command that installs with the package.

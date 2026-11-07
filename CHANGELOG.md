@@ -10,6 +10,38 @@ releases may still change the API).
 
 ## [Unreleased]
 
+### Added
+
+- New domains: `MachineElements` (bolt torque, preload and joint
+  stiffness, shaft diameter, spring rate and stress, bearing L10 life,
+  fillet welds), `Fatigue` (endurance limit, Marin factors, Goodman,
+  Soderberg, Gerber and ASME-elliptic safety factors, S-N curve) and
+  `Psychrometrics` (saturation pressure, humidity ratio, relative humidity,
+  dew point, enthalpy, specific volume, wet bulb). `Material` gains
+  Johnson buckling, slenderness ratios and an Euler/Johnson chooser.
+  Tests check published ASHRAE and Shigley table values.
+- `fpc-mcp --domains fluids,thermo`: also serve each calculation in those
+  domains as its own MCP tool, with the registry's input schema, for
+  capable models that do better calling a tool directly.
+- `fpc.uncertainty`: Monte Carlo on any calculation. Give inputs as
+  `Normal`, `Uniform` or `Triangular` distributions; get the mean,
+  standard deviation, percentiles, a 95 % interval and each input's share
+  of the spread. Also `fpc uncertainty` (`velocity=normal:2,0.1`).
+- `fpc.report` and `fpc report`: a Markdown calc sheet for any calculation
+  (method, inputs with units, defaults, result, optional uncertainty,
+  review checklist), ready for a design file or `pandoc`.
+- `apps/calculator.py`: a Streamlit web form for every calculation,
+  generated from the registry, with uncertainty and calc-sheet tabs.
+- `scripts/try_local_model.py`: ask an Ollama model engineering questions
+  through `fpc-mcp` and check its answers against the library.
+
+### Changed
+
+- The MCP `calculate` tool's `arguments` is optional so that a model
+  which puts the inputs beside `key` gets a precise correction instead of
+  a validation error it cannot act on.
+- mypy now requires every function in `fpc/` to be fully annotated.
+
 ## [0.1.0] - first PyPI release
 
 ### Added

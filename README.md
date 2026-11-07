@@ -17,8 +17,9 @@ You get:
   integration of constant acceleration, and numerical integration of a
   time-varying acceleration).
 - **`fpc/`** — an installable package with one well-documented class per
-  engineering domain (dynamics, statics, thermo, fluids, materials, gears,
-  electrical, mechatronics, modal/vibration, controls), a set of radiology /
+  engineering domain (dynamics, statics, thermo, fluids, psychrometrics,
+  materials, gears, machine elements, fatigue, electrical, mechatronics,
+  modal/vibration, controls), a set of radiology /
   medical-imaging classes, `Design` (root finding and optimization),
   `Properties` (cited reference tables with interpolation), and a `Utility`
   class for files, tables, and dialogs.
@@ -334,6 +335,43 @@ Units: methods that take plain numbers expect **SI units** (the docstring
 says so for every parameter); use Pint at the boundaries where units are
 mixed. See [docs/units.md](https://github.com/kovirlabs/first-principles-code/blob/main/docs/units.md).
 
+## Machine design, fatigue & HVAC
+
+The everyday sizing checks of a mechanical or HVAC engineer, following
+Shigley's *Mechanical Engineering Design* and the *ASHRAE Handbook -
+Fundamentals*: bolts, shafts, springs, bearings and welds
+(`MachineElements`), stress-life fatigue (`Fatigue`), Euler/Johnson column
+buckling (`Material`), and moist-air properties (`Psychrometrics`).
+
+```python
+from fpc import Fatigue, MachineElements, Material, Psychrometrics
+
+me = MachineElements()
+me.bolt_tightening_torque(preload=37.9e3, nominal_diameter=0.012)  # 91 N*m (K = 0.2)
+me.bearing_l10_life_hours(dynamic_load_rating=30e3, equivalent_load=3e3, speed_rpm=1500)  # 11 111 h
+
+# Fatigue: endurance limit -> Marin factors -> mean-stress criterion.
+f = Fatigue()
+se = f.marin_endurance_limit(
+    specimen_endurance_limit=f.endurance_limit_steel(ultimate_strength=690e6),
+    surface_factor=f.surface_factor(ultimate_strength=690e6, finish="machined"),
+    size_factor=f.size_factor(diameter=0.03),
+)  # 237 MPa
+f.goodman_safety_factor(
+    alternating_stress=120e6, mean_stress=80e6, endurance_limit=se, ultimate_strength=690e6
+)  # 1.61
+
+# Column buckling: picks Euler or Johnson from the slenderness ratio.
+Material().critical_buckling_load(
+    modulus=200e9, moment_of_inertia=1.917e-8, area=4.909e-4, length=0.5, yield_strength=250e6
+)  # {'critical_load': 97848.2, 'formula': 'johnson', 'slenderness_ratio': 80.0, ...}
+
+# Psychrometrics (temperatures in degC, RH as a fraction): solved with brentq.
+psy = Psychrometrics()
+psy.dew_point(temperature_c=25, relative_humidity=0.5)  # 13.9 degC
+psy.wet_bulb(temperature_c=25, relative_humidity=0.5)  # 17.9 degC
+```
+
 ## Radiology & medical imaging
 
 Six classes cover the physics and image handling a radiology student
@@ -482,7 +520,17 @@ without writing any code:
 fpc search "pipe pressure drop"           # find a calculation
 fpc describe Fluids.pipe_flow             # its inputs, units and formula
 fpc run Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001
+
+# How sure is the answer? Give inputs a spread and run 10 000 cases (Monte Carlo)
+fpc uncertainty Fluids.reynolds_number density=998 velocity=normal:2,0.1 length=0.05 viscosity=0.001
+
+# File it: a Markdown calc sheet with method, inputs and units, result, review checklist
+fpc report Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001 --out re.md
 ```
+
+Or use every calculation from a web form, with uncertainty and calc-sheet
+tabs: `uv run streamlit run apps/calculator.py`. See
+[docs/trusting-results.md](https://github.com/kovirlabs/first-principles-code/blob/main/docs/trusting-results.md).
 
 ## Use it with AI assistants (Ollama, LM Studio, Claude, ...)
 
@@ -540,17 +588,21 @@ first-principles-code/
 │   ├── cli.py           # the `fpc` terminal command
 │   ├── registry.py      # catalogue of every calculation (types, units, schemas)
 │   ├── mcp_server.py    # `fpc-mcp`: MCP server for AI apps
+│   ├── uncertainty.py   # Monte Carlo on any calculation
+│   ├── report.py        # Markdown calc sheets
 │   ├── hints.py         # shared type-hint names (ArrayLike, FloatArray)
 │   ├── data/            # cited reference tables (CSV) + sources
 │   ├── dynamics.py, statics.py, modal.py, thermo.py, fluids.py,
-│   ├── material.py, gear.py, electrical.py, mechatronics.py, controls.py
+│   ├── material.py, gear.py, electrical.py, mechatronics.py, controls.py,
+│   ├── machine_elements.py, fatigue.py, psychrometrics.py
 │   └── radiation.py, radiography.py, ct.py, mri.py, ultrasound.py, dicom.py
 ├── examples/            # worked problems, one script each (+ tools/ ladder)
+├── apps/                # Streamlit calculator: a form for every calculation
 ├── templates/           # copy-and-adapt starting script
 ├── notebooks/           # Jupyter notebooks
 ├── docs/                # guides + API docs site sources (mkdocs.yml)
 ├── tests/               # pytest suite (uv run pytest)
-├── scripts/             # maintenance scripts (python_support.py: Python version ratchet)
+├── scripts/             # maintenance: python_support.py (version ratchet), try_local_model.py (MCP + Ollama)
 ├── pyproject.toml       # metadata, dependencies, tool config
 ├── PACKAGES.md          # Python packages by engineering field
 ├── SPEC.md              # original project design spec
