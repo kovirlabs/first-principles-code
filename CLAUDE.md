@@ -16,6 +16,8 @@ The original design lives in [SPEC.md](SPEC.md); the improvement backlog lives i
 - `main.py` — displacement demo (closed form, `scipy` integration, library call) that prints results and saves a plot.
 - `fpc/` — the installable package (import name `fpc`, distribution name `first-principles-code`). One class per engineering domain (Dynamics, Statics, Modal, Thermo, Fluids, Psychrometrics, Material, Gear, MachineElements, Fatigue, Electrical, Mechatronics, Controls, Utility, Design, Properties, plus the radiology set Radiation, Radiography, CT, MRI, Ultrasound, Dicom), the shared Pint registry in `fpc/units.py`, and the unit-aware `Beam` dataclass.
 - `fpc/registry.py` — introspects every domain method (type hints + `[unit]` docstring tags) into a catalogue with JSON Schemas; drives `fpc search/describe/run`, the MCP server (`fpc/mcp_server.py`, command `fpc-mcp`, optional `mcp` extra) and the generated `llms.txt`. See `docs/ai.md`.
+- `fpc/uncertainty.py` (Monte Carlo on any calculation, `fpc uncertainty`) and `fpc/report.py` (Markdown calc sheets, `fpc report`) — both built on the registry. See `docs/trusting-results.md`.
+- `apps/calculator.py` — Streamlit form for every calculation, generated from the registry (`uv run streamlit run apps/calculator.py`).
 - `gui.py` — tkinter MATLAB-style console; the `Session` class is GUI-free and tested.
 - `tests/` — pytest suite, run in CI (`.github/workflows/tests.yml`).
 - `examples/` — one self-contained worked problem per script; `templates/` — copy-and-adapt starting scripts; `notebooks/` — Jupyter notebooks; `fpc/data/` — cited reference tables (CSV); `docs/` — mkdocs site sources and guides.
@@ -37,6 +39,7 @@ uv run pre-commit install  # enable git hooks (ruff + pytest)
 uv run fpc llms-txt > llms.txt  # regenerate after changing public methods (a test checks it)
 uv build                 # build sdist + wheel; releasing steps are in docs/releasing.md
 uv run scripts/python_support.py check   # supported Python versions consistent everywhere
+uv run --extra mcp scripts/try_local_model.py --model qwen3:14b --think off  # MCP server vs a local Ollama model
 uv run -p 3.11 pytest    # run the tests on a specific Python (CI runs every supported one)
 ```
 

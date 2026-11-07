@@ -21,19 +21,19 @@ from fpc.uncertainty import Normal, Uniform, monte_carlo
 result = monte_carlo(
     "Fluids.pipe_flow",
     {
-        "flow": Normal(mean=0.012, std=0.0004),          # 12 L/s, 1 sigma = 0.4 L/s
+        "flow": Normal(mean=0.012, std=0.0004),  # 12 L/s, 1 sigma = 0.4 L/s
         "diameter": 0.1023,
         "length": 120,
         "roughness": Uniform(low=0.02e-3, high=0.09e-3),
         "density": 998,
         "viscosity": 1.0e-3,
     },
-    output="pressure_drop",   # pipe_flow returns a dict; study this entry
-    seed=1,                   # same random numbers every run: repeatable
+    output="pressure_drop",  # pipe_flow returns a dict; study this entry
+    seed=1,  # same random numbers every run: repeatable
 )
-result.mean, result.std       # Pa
-result.interval(95)           # (low, high) holding 95 % of the runs
-result.sensitivity            # {"flow": 0.7, "roughness": 0.3}: what to measure better
+result.mean, result.std  # about 24 300 and 1 900 Pa
+result.interval(95)  # (low, high) holding 95 % of the runs
+result.sensitivity  # {"flow": 0.64, "roughness": 0.36}: what to pin down first
 ```
 
 | Distribution | Use it when you know |
@@ -74,10 +74,12 @@ pandoc wall.md -o wall.pdf     # optional: PDF or Word via pandoc
 ```python
 from fpc.report import calc_report
 
-text = calc_report("Thermo.conduction_heat_rate",
-                   {"conductivity": 0.72, "area": 12, "delta_temperature": 25, "thickness": 0.2},
-                   title="North wall heat loss",
-                   uncertainty=result_of_monte_carlo)   # optional extra section
+text = calc_report(
+    "Thermo.conduction_heat_rate",
+    {"conductivity": 0.72, "area": 12, "delta_temperature": 25, "thickness": 0.2},
+    title="North wall heat loss",
+    uncertainty=result_of_monte_carlo,
+)  # optional extra section
 ```
 
 The sheet is Markdown, so it can live in the project repository next to the

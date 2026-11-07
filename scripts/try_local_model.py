@@ -136,18 +136,26 @@ QUESTIONS = [
 
 
 def ollama_chat(
-    model: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    think: bool | None = None,
 ) -> dict[str, Any]:
-    """One request to Ollama's chat API; returns the assistant message."""
-    body = json.dumps(
-        {
-            "model": model,
-            "messages": messages,
-            "tools": tools,
-            "stream": False,
-            "options": {"temperature": 0},  # repeatable runs
-        }
-    ).encode()
+    """One request to Ollama's chat API; returns the assistant message.
+
+    ``think`` switches a reasoning model's thinking on or off; ``None`` leaves
+    the model's default (and works with models that cannot think at all).
+    """
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "tools": tools,
+        "stream": False,
+        "options": {"temperature": 0},  # repeatable runs
+    }
+    if think is not None:
+        payload["think"] = think
+    body = json.dumps(payload).encode()
     request = urllib.request.Request(OLLAMA, body, {"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=600) as response:
         return json.load(response)["message"]
@@ -160,7 +168,12 @@ def numbers_in(text: str) -> list[float]:
 
 
 async def ask(
-    client: Client, model: str, tools: list[dict[str, Any]], question: Question, verbose: bool
+    client: Client,
+    model: str,
+    tools: list[dict[str, Any]],
+    question: Question,
+    verbose: bool,
+    think: bool | None = None,
 ) -> tuple[bool, list[str], str]:
     """Run the tool-calling loop for one question.
 
@@ -173,10 +186,18 @@ async def ask(
     calls: list[str] = []
     answer = ""
     for _ in range(MAX_TURNS):
-        message = await asyncio.to_thread(ollama_chat, model, messages, tools)
+        message = await asyncio.to_thread(ollama_chat, model, messages, tools, think)
         messages.append(message)
         if not message.get("tool_calls"):
             answer = message.get("content", "")
+            if not answer.strip() and message.get("thinking"):
+                # Seen with qwen3 in Ollama: after a tool call the final answer
+                # lands in "thinking" and "content" is empty, so a chat app that
+                # hides thinking shows a blank reply. Count it as a failure (the
+                # user would see nothing) but say why. --think off avoids it.
+                answer = ""
+                if verbose:
+                    print("    (answer was only in the thinking field; try --think off)")
             break
         for call in message["tool_calls"]:
             name, arguments = call["function"]["name"], call["function"]["arguments"]
@@ -195,6 +216,7 @@ async def ask(
 
 async def main_async(args: argparse.Namespace) -> int:
     domains = [d for d in args.domains.split(",") if d]
+    think = {"on": True, "off": False}.get(args.think)
     questions = [q for q in QUESTIONS if not args.only or q.name in args.only.split(",")]
     async with Client(build_server(domains)) as client:
         # Translate MCP tool definitions into the "function" format Ollama expects.
@@ -215,7 +237,7 @@ async def main_async(args: argparse.Namespace) -> int:
             start = time.perf_counter()
             if args.verbose:
                 print(f"\n[{question.name}] {question.text}")
-            ok, calls, _ = await ask(client, args.model, tools, question, args.verbose)
+            ok, calls, _ = await ask(client, args.model, tools, question, args.verbose, think)
             passed += ok
             seconds = time.perf_counter() - start
             verdict = "PASS" if ok else "FAIL"
@@ -230,6 +252,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default="qwen3:14b", help="an Ollama model with tool calling")
     parser.add_argument("--domains", default="", help="passed to the server, e.g. fluids,thermo")
     parser.add_argument("--only", default="", help="comma-separated question names")
+    parser.add_argument(
+        "--think", choices=["on", "off"], help="reasoning models: turn thinking on or off"
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="print each conversation")
     args = parser.parse_args(argv)
     try:
