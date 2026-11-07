@@ -9,6 +9,7 @@
 
 site_name: First Principles Code
 site_description: Engineering calculations in Python, written to be read and learned from.
+site_url: https://kovirlabs.github.io/first-principles-code/
 repo_url: https://github.com/kovirlabs/first-principles-code
 edit_uri: edit/main/docs/
 

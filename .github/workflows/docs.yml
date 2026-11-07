@@ -3,7 +3,8 @@
 #
 # Builds the documentation site (mkdocs + mkdocstrings) on every pull request
 # so broken links or docstrings fail early, and publishes it to GitHub Pages
-# on every push to main.
+# on every push to main. To redeploy without a commit: Actions -> docs ->
+# "Run workflow".
 #
 # One-time repository setup: Settings -> Pages -> Source: "GitHub Actions".
 
@@ -14,6 +15,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Adds a "Run workflow" button in the Actions tab for manual redeploys.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -39,14 +42,14 @@ jobs:
         run: uv run --group docs mkdocs build --strict
 
       - name: Upload site for Pages
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     name: deploy to GitHub Pages
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     permissions:
