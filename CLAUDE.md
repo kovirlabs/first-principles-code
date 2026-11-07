@@ -14,7 +14,7 @@ The original design lives in [SPEC.md](SPEC.md); the improvement backlog lives i
 ## Current state
 
 - `main.py` — displacement demo (closed form, `scipy` integration, library call) that prints results and saves a plot.
-- `fpc/` — the installable package (import name `fpc`, distribution name `first-principles-code`). One class per engineering domain (Dynamics, Statics, Modal, Thermo, Fluids, Material, Gear, Electrical, Mechatronics, Controls, Utility, Design, Properties, plus the radiology set Radiation, Radiography, CT, MRI, Ultrasound, Dicom), the shared Pint registry in `fpc/units.py`, and the unit-aware `Beam` dataclass.
+- `fpc/` — the installable package (import name `fpc`, distribution name `first-principles-code`). One class per engineering domain (Dynamics, Statics, Modal, Thermo, Fluids, Psychrometrics, Material, Gear, MachineElements, Fatigue, Electrical, Mechatronics, Controls, Utility, Design, Properties, plus the radiology set Radiation, Radiography, CT, MRI, Ultrasound, Dicom), the shared Pint registry in `fpc/units.py`, and the unit-aware `Beam` dataclass.
 - `fpc/registry.py` — introspects every domain method (type hints + `[unit]` docstring tags) into a catalogue with JSON Schemas; drives `fpc search/describe/run`, the MCP server (`fpc/mcp_server.py`, command `fpc-mcp`, optional `mcp` extra) and the generated `llms.txt`. See `docs/ai.md`.
 - `gui.py` — tkinter MATLAB-style console; the `Session` class is GUI-free and tested.
 - `tests/` — pytest suite, run in CI (`.github/workflows/tests.yml`).

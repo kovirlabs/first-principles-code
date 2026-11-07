@@ -65,9 +65,12 @@ nav:
           - Material: api/material.md
           - Beam (Pint): api/beam.md
           - Gear: api/gear.md
+          - Machine elements: api/machine_elements.md
+          - Fatigue: api/fatigue.md
       - Thermal and fluids:
           - Thermo: api/thermo.md
           - Fluids: api/fluids.md
+          - Psychrometrics (moist air): api/psychrometrics.md
       - Electrical and controls:
           - Electrical: api/electrical.md
           - Mechatronics: api/mechatronics.md
