@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Evan Gress
+name: Bug report
+description: A calculation gives a wrong answer, or something crashes.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! For wrong numbers, a reference value (textbook,
+        standard, or hand calculation) helps us fix it fast.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the full error message if there was one.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Code to reproduce
+      description: The smallest snippet that shows the problem.
+      render: python
+      placeholder: |
+        from fpc import Fluids
+        Fluids().colebrook_friction_factor(reynolds=1e5, relative_roughness=1e-4)
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result and its source
+      description: What should the answer be, and where does that value come from?
+  - type: input
+    id: version
+    attributes:
+      label: Environment
+      description: Operating system, Python version (`uv run python --version`), and commit or version.

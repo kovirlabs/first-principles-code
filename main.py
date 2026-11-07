@@ -22,24 +22,22 @@ Run it with:
 
 # --- Standard library -------------------------------------------------------
 # ``math`` ships with Python and covers scalar math (sqrt, sin, pi, ...).
-import math
 
 # --- Third-party scientific stack ------------------------------------------
 # ``numpy`` gives us fast array math; ``scipy`` adds the heavy machinery -
 # here we use its numerical integration routines. Both are installed via
 # ``uv add numpy scipy`` and pinned in pyproject.toml.
-import numpy as np
-from scipy import integrate
-
 # ``matplotlib`` turns result arrays into figures - the engineering deliverable.
 # pyplot is its MATLAB-style interface; if no screen is available it quietly
 # falls back to a file-only backend, so saving a PNG always works.
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy import integrate
 
 # --- Project library --------------------------------------------------------
-# Our own dynamics helpers live in ./library. This is how you import a class
+# Our own dynamics helpers live in ./fpc. This is how you import a class
 # you wrote yourself and reuse it across scripts.
-from library.dynamics import Dynamics
+from fpc.dynamics import Dynamics
 
 
 def analytical_displacement(*, initial_position, initial_velocity, acceleration, time):
@@ -58,7 +56,7 @@ def analytical_displacement(*, initial_position, initial_velocity, acceleration,
     :param time: elapsed time t [s]
     :returns: position x at time t [m]
     """
-    return initial_position + initial_velocity * time + 0.5 * acceleration * time ** 2
+    return initial_position + initial_velocity * time + 0.5 * acceleration * time**2
 
 
 def plot_motion(*, time, acceleration, velocity, position, save_path="displacement.png"):
@@ -106,10 +104,10 @@ def main():
     # Scenario: an object launched upward at 5 m/s, then pulled by gravity.
     # We use the sign convention "down is positive" so gravity is +9.81.
     # ----------------------------------------------------------------------
-    x0 = 0.0        # initial position [m]
-    v0 = 5.0        # initial velocity [m/s]
-    g = 9.81        # gravitational acceleration [m/s^2]
-    t_final = 3.0   # how long we observe [s]
+    x0 = 0.0  # initial position [m]
+    v0 = 5.0  # initial velocity [m/s]
+    g = 9.81  # gravitational acceleration [m/s^2]
+    t_final = 3.0  # how long we observe [s]
 
     # === 1. Closed-form answer ===========================================
     # When acceleration is constant, a formula exists. This is our "truth"

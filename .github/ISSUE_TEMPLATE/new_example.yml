@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Evan Gress
+name: New worked example
+description: Suggest a realistic problem for the examples/ folder.
+labels: [example]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: The engineering question
+      description: Phrase it the way it comes up at work, with real-looking numbers.
+      placeholder: "We need to move 12 L/s of water up 15 m through 120 m of steel pipe. Which pipe size and pump?"
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Approach
+      description: The steps and formulas a good answer would walk through.
+  - type: textarea
+    id: python
+    attributes:
+      label: Python ideas it would teach
+      description: e.g. root finding, pandas groupby, Pint conversions, optimization, plotting.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to write this example myself.

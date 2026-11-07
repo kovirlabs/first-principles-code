@@ -7,6 +7,8 @@ The console's logic is deliberately separated from its tkinter widgets, so we
 can test "run a line of code and record the result" with no display attached.
 """
 
+from pathlib import Path
+
 from gui import Session
 
 
@@ -47,12 +49,12 @@ def test_runtime_error_is_reported_without_crashing():
 
 
 def test_export_csv_and_json(tmp_path):
-    """Recorded results export to both formats via library.Utility."""
+    """Recorded results export to both formats via fpc.Utility."""
     session = Session()
     session.run(source="dyn.kinetic_energy(mass=2, velocity=3)")
 
     csv_path = session.export_csv(file_path=str(tmp_path / "out.csv"))
     json_path = session.export_json(file_path=str(tmp_path / "out.json"))
 
-    assert "label,command,result" in open(csv_path, encoding="utf-8").read()
-    assert "out1" in open(json_path, encoding="utf-8").read()
+    assert "label,command,result" in Path(csv_path).read_text(encoding="utf-8")
+    assert "out1" in Path(json_path).read_text(encoding="utf-8")

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 
-"""Tests for the unit-aware Beam dataclass (library.beam.Beam).
+"""Tests for the unit-aware Beam dataclass (fpc.beam.Beam).
 
 Shows how to test code that uses Pint: do the math in known units, then call
 ``.to(...).magnitude`` to compare the numeric value with ``pytest.approx``.
@@ -11,8 +11,8 @@ Also checks that bad inputs raise, and that Pint blocks nonsensical unit math.
 import pytest
 from pint import DimensionalityError
 
-from library.units import Q_
-from library.beam import Beam
+from fpc.beam import Beam
+from fpc.units import Q_
 
 
 def make_beam():
