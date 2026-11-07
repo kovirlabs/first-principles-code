@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Evan Gress
+#
+# Builds the package and uploads it to PyPI when a GitHub Release is published.
+# A manual run (Actions -> release -> "Run workflow") uploads to TestPyPI
+# instead, for a dry run. Step-by-step guide: docs/releasing.md.
+#
+# Uses PyPI "Trusted Publishing": PyPI trusts this specific workflow in this
+# specific repository, so no API token or password is stored anywhere.
+# One-time setup on pypi.org and test.pypi.org is described in the guide.
+
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build and check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install the newest supported Python (managed by scripts/python_support.py)
+        run: |
+          uv python install 3.15
+          echo "UV_PYTHON=3.15" >> "$GITHUB_ENV"
+
+      # Refuse to publish a tag that does not match pyproject.toml's version,
+      # the most common release mistake.
+      - name: Check tag matches version
+        if: github.event_name == 'release'
+        run: |
+          version=$(uv version --short)
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$version" != "$tag" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match pyproject version $version"; exit 1
+          fi
+
+      - name: Run the test suite
+        run: |
+          uv sync --all-groups --all-extras
+          uv run pytest -q
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Check the package metadata renders on PyPI
+        run: uvx twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    name: upload to TestPyPI
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/first-principles-code
+    permissions:
+      id-token: write # lets the job prove its identity to (Test)PyPI
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: upload to PyPI
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/first-principles-code
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -11,7 +11,19 @@ display. This module does both steps with NumPy, so it works on a single
 number or on a whole 512 x 512 image in one call (vectorization).
 """
 
+from typing import Literal
+
 import numpy as np
+from numpy.typing import NDArray
+
+from fpc.hints import ArrayLike, FloatArray
+
+# Accepted preset and body-region names, as ``Literal`` types so callers (and
+# the AI tool schemas built by fpc.registry) know the exact valid strings.
+WindowPreset = Literal[
+    "brain", "subdural", "stroke", "lung", "mediastinum", "abdomen", "liver", "bone"
+]
+BodyRegion = Literal["head", "neck", "chest", "abdomen_pelvis", "chest_abdomen_pelvis"]
 
 
 class CT:
@@ -43,7 +55,13 @@ class CT:
         (float("inf"), "bone / calcification / metal"),
     ]
 
-    def hounsfield_units(self, *, attenuation_coefficient, water_attenuation, air_attenuation=0.0):
+    def hounsfield_units(
+        self,
+        *,
+        attenuation_coefficient: ArrayLike,
+        water_attenuation: float,
+        air_attenuation: float = 0.0,
+    ) -> FloatArray:
         """Convert a linear attenuation coefficient to Hounsfield units.
 
             HU = 1000 * (mu - mu_water) / (mu_water - mu_air)
@@ -53,12 +71,18 @@ class CT:
         :param attenuation_coefficient: tissue mu [1/cm] (number or array)
         :param water_attenuation: mu of water at the same beam energy [1/cm]
         :param air_attenuation: mu of air [1/cm]; ~0 so it defaults to 0
-        :returns: CT number [HU]
+        :returns: CT number, as a float array [HU]
         """
         mu = np.asarray(attenuation_coefficient, dtype=float)
         return 1000.0 * (mu - water_attenuation) / (water_attenuation - air_attenuation)
 
-    def rescale_to_hounsfield(self, *, stored_values, rescale_slope=1.0, rescale_intercept=-1024.0):
+    def rescale_to_hounsfield(
+        self,
+        *,
+        stored_values: ArrayLike,
+        rescale_slope: float = 1.0,
+        rescale_intercept: float = -1024.0,
+    ) -> FloatArray:
         """Convert raw stored pixel values to HU:  HU = value * slope + intercept.
 
         DICOM files usually store unsigned integers; the RescaleSlope and
@@ -66,14 +90,20 @@ class CT:
         Forgetting this step is a classic beginner bug: every value is off by
         ~1024. See :class:`fpc.dicom.Dicom` for reading these from a file.
 
-        :param stored_values: raw pixel values (number or array)
-        :param rescale_slope: DICOM RescaleSlope
-        :param rescale_intercept: DICOM RescaleIntercept
-        :returns: values in HU (float array)
+        :param stored_values: raw pixel values (number or array) [-]
+        :param rescale_slope: DICOM RescaleSlope [HU per stored value]
+        :param rescale_intercept: DICOM RescaleIntercept [HU]
+        :returns: values in HU (float array) [HU]
         """
         return np.asarray(stored_values, dtype=float) * rescale_slope + rescale_intercept
 
-    def window_bounds(self, *, window_width=None, window_level=None, preset=None):
+    def window_bounds(
+        self,
+        *,
+        window_width: float | None = None,
+        window_level: float | None = None,
+        preset: WindowPreset | None = None,
+    ) -> tuple[float, float]:
         """Lowest and highest HU shown by a window.
 
         Anything below ``level - width/2`` displays black, anything above
@@ -83,14 +113,20 @@ class CT:
         :param window_width: window width W [HU]
         :param window_level: window level / centre L [HU]
         :param preset: optional preset name, e.g. "lung"
-        :returns: tuple (lower HU, upper HU)
+        :returns: tuple (lower HU, upper HU) [HU]
         """
         width, level = self._resolve_window(window_width, window_level, preset)
         return level - width / 2.0, level + width / 2.0
 
     def apply_window(
-        self, *, hounsfield, window_width=None, window_level=None, preset=None, output_max=255
-    ):
+        self,
+        *,
+        hounsfield: ArrayLike,
+        window_width: float | None = None,
+        window_level: float | None = None,
+        preset: WindowPreset | None = None,
+        output_max: float = 255,
+    ) -> NDArray[np.uint8] | FloatArray:
         """Map HU values to display grey levels for a chosen window.
 
         Values are clipped to the window, then scaled linearly to 0..output_max.
@@ -98,12 +134,12 @@ class CT:
         levels -> high contrast; a wide window (bone, W=1800) shows everything
         but with low contrast.
 
-        :param hounsfield: HU value or array (e.g. a full CT slice)
+        :param hounsfield: HU value or array (e.g. a full CT slice) [HU]
         :param window_width: window width W [HU]
         :param window_level: window level L [HU]
         :param preset: optional preset name instead of width/level
-        :param output_max: brightest grey level (255 for 8-bit display)
-        :returns: numpy array of grey levels (uint8 when output_max == 255)
+        :param output_max: brightest grey level (255 for 8-bit display) [-]
+        :returns: numpy array of grey levels (uint8 when output_max == 255) [-]
         """
         lower, upper = self.window_bounds(
             window_width=window_width,
@@ -118,7 +154,7 @@ class CT:
             return np.round(scaled).astype(np.uint8)
         return scaled
 
-    def classify_hounsfield(self, *, hounsfield):
+    def classify_hounsfield(self, *, hounsfield: float) -> str:
         """Return a rough tissue label for a single HU value (teaching aid).
 
         :param hounsfield: CT number [HU]
@@ -129,7 +165,7 @@ class CT:
                 return label
         return self.HU_REFERENCE_RANGES[-1][1]
 
-    def dose_length_product(self, *, ctdi_vol_mgy, scan_length_cm):
+    def dose_length_product(self, *, ctdi_vol_mgy: float, scan_length_cm: float) -> float:
         """Dose-length product DLP = CTDIvol * scan length  [mGy*cm].
 
         CTDIvol is the average dose within one slice of a standard phantom;
@@ -153,7 +189,7 @@ class CT:
         "chest_abdomen_pelvis": 0.015,
     }
 
-    def effective_dose_from_dlp(self, *, dlp_mgy_cm, region):
+    def effective_dose_from_dlp(self, *, dlp_mgy_cm: float, region: BodyRegion) -> float:
         """Estimate adult effective dose:  E ~= k * DLP.
 
         Example: a routine head CT with DLP ~ 1000 mGy*cm gives ~2 mSv.
@@ -171,7 +207,9 @@ class CT:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
-    def _resolve_window(self, width, level, preset):
+    def _resolve_window(
+        self, width: float | None, level: float | None, preset: str | None
+    ) -> tuple[float, float]:
         """Return (width, level) from either a preset name or explicit values.
 
         The leading underscore marks this as an internal helper - a Python

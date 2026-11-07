@@ -18,6 +18,8 @@ import math
 
 from scipy.integrate import solve_ivp
 
+from fpc.hints import FloatArray
+
 
 class Dynamics:
     """Kinematics and rigid-body dynamics helpers.
@@ -33,8 +35,13 @@ class Dynamics:
     GRAVITY = 9.80665
 
     def displacement_constant_acceleration(
-        self, *, initial_position, initial_velocity, acceleration, time
-    ):
+        self,
+        *,
+        initial_position: float,
+        initial_velocity: float,
+        acceleration: float,
+        time: float,
+    ) -> float:
         """Displacement under constant acceleration: x = x0 + v0*t + 1/2*a*t^2.
 
         :param initial_position: starting position x0 [m]
@@ -45,7 +52,7 @@ class Dynamics:
         """
         return initial_position + initial_velocity * time + 0.5 * acceleration * time**2
 
-    def final_velocity(self, *, initial_velocity, acceleration, time):
+    def final_velocity(self, *, initial_velocity: float, acceleration: float, time: float) -> float:
         """Velocity after constant acceleration: v = v0 + a*t.
 
         :param initial_velocity: starting velocity v0 [m/s]
@@ -55,7 +62,9 @@ class Dynamics:
         """
         return initial_velocity + acceleration * time
 
-    def velocity_from_distance(self, *, initial_velocity, acceleration, distance):
+    def velocity_from_distance(
+        self, *, initial_velocity: float, acceleration: float, distance: float
+    ) -> float:
         """Velocity after travelling a distance: v^2 = v0^2 + 2*a*d.
 
         Useful when you know how far something moved but not how long it took.
@@ -68,7 +77,9 @@ class Dynamics:
         # max(..., 0.0) guards against tiny negative values from rounding.
         return math.sqrt(max(initial_velocity**2 + 2 * acceleration * distance, 0.0))
 
-    def projectile_range(self, *, speed, angle_deg, gravity=GRAVITY):
+    def projectile_range(
+        self, *, speed: float, angle_deg: float, gravity: float = GRAVITY
+    ) -> float:
         """Horizontal range of a projectile launched over flat ground.
 
         R = v^2 * sin(2*theta) / g.
@@ -82,7 +93,9 @@ class Dynamics:
         angle_rad = math.radians(angle_deg)
         return speed**2 * math.sin(2 * angle_rad) / gravity
 
-    def projectile_time_of_flight(self, *, speed, angle_deg, gravity=GRAVITY):
+    def projectile_time_of_flight(
+        self, *, speed: float, angle_deg: float, gravity: float = GRAVITY
+    ) -> float:
         """Time a projectile spends in the air over flat ground.
 
         t = 2 * v * sin(theta) / g.
@@ -95,7 +108,7 @@ class Dynamics:
         angle_rad = math.radians(angle_deg)
         return 2 * speed * math.sin(angle_rad) / gravity
 
-    def newtons_second_law(self, *, mass, acceleration):
+    def newtons_second_law(self, *, mass: float, acceleration: float) -> float:
         """Net force from Newton's second law: F = m*a.
 
         :param mass: mass [kg]
@@ -104,7 +117,7 @@ class Dynamics:
         """
         return mass * acceleration
 
-    def kinetic_energy(self, *, mass, velocity):
+    def kinetic_energy(self, *, mass: float, velocity: float) -> float:
         """Translational kinetic energy: KE = 1/2 * m * v^2.
 
         :param mass: mass [kg]
@@ -113,7 +126,7 @@ class Dynamics:
         """
         return 0.5 * mass * velocity**2
 
-    def momentum(self, *, mass, velocity):
+    def momentum(self, *, mass: float, velocity: float) -> float:
         """Linear momentum: p = m*v.
 
         :param mass: mass [kg]
@@ -122,7 +135,7 @@ class Dynamics:
         """
         return mass * velocity
 
-    def centripetal_acceleration(self, *, speed, radius):
+    def centripetal_acceleration(self, *, speed: float, radius: float) -> float:
         """Centripetal acceleration for circular motion: a = v^2 / r.
 
         :param speed: tangential speed [m/s]
@@ -134,15 +147,15 @@ class Dynamics:
     def simulate_projectile_drag(
         self,
         *,
-        speed,
-        angle_deg,
-        mass,
-        drag_coefficient,
-        frontal_area,
-        air_density=1.225,
-        gravity=GRAVITY,
-        max_time=60.0,
-    ):
+        speed: float,
+        angle_deg: float,
+        mass: float,
+        drag_coefficient: float,
+        frontal_area: float,
+        air_density: float = 1.225,
+        gravity: float = GRAVITY,
+        max_time: float = 60.0,
+    ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Simulate 2-D projectile flight WITH quadratic air drag.
 
         Without drag, ``projectile_range`` has a tidy formula. Add air
@@ -173,7 +186,7 @@ class Dynamics:
         # Lump the drag constants together: F_drag = drag_k * v^2.
         drag_k = 0.5 * air_density * drag_coefficient * frontal_area
 
-        def equations_of_motion(t, state):
+        def equations_of_motion(t: float, state: FloatArray) -> list[float]:
             """Return d/dt of [x, y, vx, vy] - what solve_ivp integrates."""
             x, y, vx, vy = state
             speed_now = math.hypot(vx, vy)
@@ -182,14 +195,16 @@ class Dynamics:
             ay = -gravity - (drag_k / mass) * speed_now * vy
             return [vx, vy, ax, ay]
 
-        def hit_ground(t, state):
+        def hit_ground(t: float, state: FloatArray) -> float:
             """Event function: zero when the height y returns to ground level."""
             return state[1]
 
         # terminal=True stops the solver at the event; direction=-1 means only
-        # trigger when y is decreasing (landing, not launch).
-        hit_ground.terminal = True
-        hit_ground.direction = -1
+        # trigger when y is decreasing (landing, not launch). SciPy reads these
+        # as ad-hoc attributes on the function object, which type checkers
+        # cannot know about - hence the narrow ``type: ignore`` comments.
+        hit_ground.terminal = True  # type: ignore[attr-defined]
+        hit_ground.direction = -1  # type: ignore[attr-defined]
 
         solution = solve_ivp(
             equations_of_motion,

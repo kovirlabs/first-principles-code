@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Evan Gress
 #
-# Runs lint, format check, type check, and the pytest suite on every push to
-# main and on every pull request.
+# Runs lint, format check and type check once, then the pytest suite on every
+# supported Python version, on every push to main and every pull request.
 # Uses uv (the same tool the project develops with) so CI matches local dev.
+#
+# The version list below is managed by scripts/python_support.py (which also
+# checks it agrees with pyproject.toml). Don't edit it by hand; run
+#   uv run scripts/python_support.py set --oldest X.Y --newest X.Y
 
 name: tests
 
@@ -14,8 +18,8 @@ on:
     branches: [main]
 
 jobs:
-  pytest:
-    name: checks + pytest (Python 3.14)
+  checks:
+    name: lint + types + version policy
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
@@ -24,14 +28,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
-          # Cache uv's package downloads between runs to speed up CI.
           enable-cache: true
 
-      - name: Install Python 3.14
-        run: uv python install 3.14
-
-      - name: Sync dependencies (incl. dev group)
-        run: uv sync --all-groups
+      - name: Sync dependencies (all groups + the mcp extra)
+        run: uv sync --all-groups --all-extras
 
       - name: Lint (ruff)
         run: uv run ruff check .
@@ -39,8 +39,36 @@ jobs:
       - name: Check formatting (ruff format)
         run: uv run ruff format --check .
 
+      # mypy checks against the *oldest* supported Python (pyproject.toml),
+      # so it flags standard-library features that version lacks.
       - name: Type check (mypy)
         run: uv run mypy
+
+      - name: Supported Python versions declared consistently
+        run: uv run scripts/python_support.py check
+
+  pytest:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Run every version even if one fails, so one PR shows the whole picture.
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      # setup-uv's python-version sets UV_PYTHON, so every uv command below
+      # (sync, run) uses this matrix entry's Python.
+      - name: Sync dependencies (all groups + the mcp extra)
+        run: uv sync --all-groups --all-extras
 
       # --all-groups above installed the notebook tools, so this also
       # executes every notebook and runs every example script.

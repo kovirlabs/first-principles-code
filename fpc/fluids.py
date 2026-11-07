@@ -24,7 +24,9 @@ class Fluids:
     # Acceleration due to gravity [m/s^2], used by head/pressure relations.
     GRAVITY = 9.80665
 
-    def reynolds_number(self, *, density, velocity, length, viscosity):
+    def reynolds_number(
+        self, *, density: float, velocity: float, length: float, viscosity: float
+    ) -> float:
         """Reynolds number: Re = rho*v*L / mu.
 
         Re is the ratio of inertial to viscous forces and tells you whether
@@ -38,7 +40,7 @@ class Fluids:
         """
         return density * velocity * length / viscosity
 
-    def continuity_velocity(self, *, area_in, velocity_in, area_out):
+    def continuity_velocity(self, *, area_in: float, velocity_in: float, area_out: float) -> float:
         """Outlet velocity from conservation of mass: A1*v1 = A2*v2.
 
         For an incompressible fluid, narrowing the pipe speeds the flow up.
@@ -50,7 +52,7 @@ class Fluids:
         """
         return area_in * velocity_in / area_out
 
-    def dynamic_pressure(self, *, density, velocity):
+    def dynamic_pressure(self, *, density: float, velocity: float) -> float:
         """Dynamic pressure of a moving fluid: q = 1/2 * rho * v^2.
 
         :param density: fluid density rho [kg/m^3]
@@ -62,14 +64,14 @@ class Fluids:
     def bernoulli_pressure(
         self,
         *,
-        density,
-        velocity_1,
-        height_1,
-        pressure_1,
-        velocity_2,
-        height_2,
-        gravity=GRAVITY,
-    ):
+        density: float,
+        velocity_1: float,
+        height_1: float,
+        pressure_1: float,
+        velocity_2: float,
+        height_2: float,
+        gravity: float = GRAVITY,
+    ) -> float:
         """Downstream static pressure from Bernoulli's equation.
 
         Along a streamline (no friction, incompressible):
@@ -88,7 +90,15 @@ class Fluids:
         total_head = pressure_1 + 0.5 * density * velocity_1**2 + density * gravity * height_1
         return total_head - 0.5 * density * velocity_2**2 - density * gravity * height_2
 
-    def pipe_head_loss(self, *, friction_factor, length, diameter, velocity, gravity=GRAVITY):
+    def pipe_head_loss(
+        self,
+        *,
+        friction_factor: float,
+        length: float,
+        diameter: float,
+        velocity: float,
+        gravity: float = GRAVITY,
+    ) -> float:
         """Major head loss in a pipe (Darcy-Weisbach equation).
 
         h_f = f * (L/D) * v^2 / (2*g).
@@ -102,7 +112,7 @@ class Fluids:
         """
         return friction_factor * (length / diameter) * velocity**2 / (2 * gravity)
 
-    def swamee_jain_friction_factor(self, *, reynolds, relative_roughness):
+    def swamee_jain_friction_factor(self, *, reynolds: float, relative_roughness: float) -> float:
         """Explicit approximation to the Colebrook friction factor (Swamee-Jain).
 
         f = 0.25 / [log10(eps/(3.7*D) + 5.74/Re^0.9)]^2, within about 1% of
@@ -115,7 +125,7 @@ class Fluids:
         """
         return 0.25 / math.log10(relative_roughness / 3.7 + 5.74 / reynolds**0.9) ** 2
 
-    def colebrook_friction_factor(self, *, reynolds, relative_roughness):
+    def colebrook_friction_factor(self, *, reynolds: float, relative_roughness: float) -> float:
         """Darcy friction factor from the Colebrook equation, solved numerically.
 
         Colebrook (turbulent pipe flow) is *implicit* - f appears on both sides:
@@ -144,7 +154,7 @@ class Fluids:
             # Laminar: Hagen-Poiseuille gives an exact closed form.
             return 64.0 / reynolds
 
-        def residual(f):
+        def residual(f: float) -> float:
             """Colebrook rearranged so the correct f makes this zero."""
             return 1 / math.sqrt(f) + 2 * math.log10(
                 relative_roughness / 3.7 + 2.51 / (reynolds * math.sqrt(f))
@@ -154,7 +164,16 @@ class Fluids:
         # is why it is the default choice for "solve this one equation".
         return brentq(residual, 0.001, 0.2, xtol=1e-12)
 
-    def pipe_flow(self, *, flow, diameter, length, roughness, density, viscosity):
+    def pipe_flow(
+        self,
+        *,
+        flow: float,
+        diameter: float,
+        length: float,
+        roughness: float,
+        density: float,
+        viscosity: float,
+    ) -> dict[str, float]:
         """Everything about steady flow through one straight pipe, in one call.
 
         Chains the methods above: velocity from continuity, Reynolds number,

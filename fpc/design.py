@@ -22,6 +22,8 @@ with a central point load and a solid rectangular cross-section, matching
 ``fpc.Beam``.
 """
 
+from typing import Any
+
 import numpy as np
 from scipy.optimize import brentq, minimize
 
@@ -31,13 +33,15 @@ class Design:
 
     # --- Formulas the design methods search over -------------------------
     @staticmethod
-    def _deflection(*, load, length, modulus, width, height):
+    def _deflection(
+        *, load: float, length: float, modulus: float, width: float, height: float
+    ) -> float:
         """Midspan deflection of a simply supported beam: P*L^3 / (48*E*I)."""
         moment_of_inertia = width * height**3 / 12
         return load * length**3 / (48 * modulus * moment_of_inertia)
 
     @staticmethod
-    def _bending_stress(*, load, length, width, height):
+    def _bending_stress(*, load: float, length: float, width: float, height: float) -> float:
         """Peak bending stress: M*c/I with M = P*L/4, c = h/2  ->  1.5*P*L/(b*h^2)."""
         return 1.5 * load * length / (width * height**2)
 
@@ -45,14 +49,14 @@ class Design:
     def rectangular_beam_height_for_deflection(
         self,
         *,
-        load,
-        length,
-        modulus,
-        width,
-        max_deflection,
-        min_height=1e-3,
-        max_height=10.0,
-    ):
+        load: float,
+        length: float,
+        modulus: float,
+        width: float,
+        max_deflection: float,
+        min_height: float = 1e-3,
+        max_height: float = 10.0,
+    ) -> float:
         """Find the beam height that gives exactly the allowed deflection.
 
         We write the requirement as a function that is zero at the answer::
@@ -77,7 +81,7 @@ class Design:
         :raises ValueError: if the answer is not inside the bracket
         """
 
-        def residual(height):
+        def residual(height: float) -> float:
             return (
                 self._deflection(
                     load=load,
@@ -97,16 +101,16 @@ class Design:
     def lightest_rectangular_beam(
         self,
         *,
-        load,
-        length,
-        modulus,
-        density,
-        allowable_stress,
-        max_deflection,
-        width_bounds=(0.01, 0.5),
-        height_bounds=(0.01, 1.0),
-        max_aspect_ratio=4.0,
-    ):
+        load: float,
+        length: float,
+        modulus: float,
+        density: float,
+        allowable_stress: float,
+        max_deflection: float,
+        width_bounds: tuple[float, float] = (0.01, 0.5),
+        height_bounds: tuple[float, float] = (0.01, 1.0),
+        max_aspect_ratio: float = 4.0,
+    ) -> dict[str, Any]:
         """Find the lightest rectangular beam that is strong and stiff enough.
 
         Optimization problem (the vocabulary is worth learning):
@@ -141,9 +145,10 @@ class Design:
         :param width_bounds: (min, max) section width [m]
         :param height_bounds: (min, max) section height [m]
         :param max_aspect_ratio: largest allowed height / width, defaults to 4
-            (a common rule of thumb against lateral-torsional buckling)
-        :returns: dict with ``width``, ``height``, ``mass``, ``stress``,
-            ``deflection`` (SI units), and which constraints are ``active``
+            (a common rule of thumb against lateral-torsional buckling) [-]
+        :returns: dict with ``width`` [m], ``height`` [m], ``mass`` [kg],
+            ``stress`` [Pa], ``deflection`` [m], and which constraints are
+            ``active`` (list of names)
         :raises RuntimeError: if the optimizer fails to find a feasible design
         """
 

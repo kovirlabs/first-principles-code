@@ -28,7 +28,7 @@ install and usage tutorial).
 ```bash
 git clone <your-fork-url>
 cd first-principles-code
-uv sync --all-groups    # create the environment (runtime + dev, notebooks, docs, apps)
+uv sync --all-groups --all-extras  # create the environment (runtime + dev, notebooks, docs, apps, mcp)
 uv run main.py          # confirm the demo runs
 uv run pytest           # confirm the test suite is green
 uv run pre-commit install   # run ruff + pytest automatically on every commit
@@ -48,6 +48,10 @@ uv run --group docs mkdocs build --strict   # docs site builds cleanly
 
 Because the code teaches, these conventions are requirements, not suggestions:
 
+- **Python versions:** code must run on the oldest supported Python (see
+  [docs/python-versions.md](docs/python-versions.md)); ruff and mypy are set
+  to it and CI tests every supported version. Try one locally with
+  `uv run -p 3.11 pytest`.
 - **Keyword-only arguments.** Methods use `def method(self, *, ...)` so every
   call reads like a sentence (`acceleration=9.81`, not a bare `9.81`).
 - **Docstrings on every class and method**, documenting each parameter *and its
@@ -73,9 +77,12 @@ Copy this into your pull request description and tick each box.
 
 - [ ] **Module:** `fpc/<domain>.py` with an SPDX header, a module docstring
       explaining the domain, and one class (`class <Domain>:`).
-- [ ] **Methods:** keyword-only (`def method(self, *, ...)`), each with a
-      docstring giving the formula, every parameter's units, and the return
-      value's units. Comment the *why* of non-obvious steps.
+- [ ] **Methods:** keyword-only (`def method(self, *, ...)`) with type
+      hints, each with a docstring giving the formula, a
+      `:param name: description [unit]` line per parameter (`[-]` if
+      dimensionless), and a `:returns:` line with its unit. Comment the *why*
+      of non-obvious steps. `tests/test_registry.py` enforces the unit tags,
+      because the MCP server and `fpc describe` show them to users and AI models.
 - [ ] **Validation:** `raise ValueError` with a clear message for inputs
       that can realistically be wrong.
 - [ ] **Export:** import it in `fpc/__init__.py` and add it to `__all__`.
@@ -87,6 +94,10 @@ Copy this into your pull request description and tick each box.
       entry under "API reference" in `mkdocs.yml`.
 - [ ] **README:** a row or sentence in the relevant section and the
       project-layout tree.
+- [ ] **AI index:** regenerate `llms.txt` with `uv run fpc llms-txt > llms.txt`
+      (a test fails if it is stale). The class appears in the MCP server and
+      `fpc search` automatically; if it reads or writes files, add it to
+      `EXCLUDED_CLASSES` in `fpc/registry.py` instead.
 - [ ] **Example (optional, encouraged):** a script in `examples/` answering
       one realistic question with the new class, plus a row in
       `examples/README.md`.

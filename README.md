@@ -22,15 +22,15 @@ You get:
   medical-imaging classes, `Design` (root finding and optimization),
   `Properties` (cited reference tables with interpolation), and a `Utility`
   class for files, tables, and dialogs.
-- **[`examples/`](examples/)** — one script per realistic problem (pump
+- **[`examples/`](https://github.com/kovirlabs/first-principles-code/tree/main/examples/)** — one script per realistic problem (pump
   sizing, beam selection, PID tuning, ...), each going from question to answer.
-- **[`templates/engineering_script.py`](templates/engineering_script.py)** —
+- **[`templates/engineering_script.py`](https://github.com/kovirlabs/first-principles-code/blob/main/templates/engineering_script.py)** —
   a commented skeleton to copy for your own calculation.
-- **[`notebooks/`](notebooks/)** — Jupyter notebooks that walk through the library.
-- **Guides:** [from calculation to tool](docs/building-tools.md) (script ->
+- **[`notebooks/`](https://github.com/kovirlabs/first-principles-code/tree/main/notebooks/)** — Jupyter notebooks that walk through the library.
+- **Guides:** [from calculation to tool](https://github.com/kovirlabs/first-principles-code/blob/main/docs/building-tools.md) (script ->
   CLI -> GUI -> web app -> installed command) and
-  [units: floats or Pint?](docs/units.md).
-- **[`PACKAGES.md`](PACKAGES.md)** — which Python packages to use, by engineering field.
+  [units: floats or Pint?](https://github.com/kovirlabs/first-principles-code/blob/main/docs/units.md).
+- **[`PACKAGES.md`](https://github.com/kovirlabs/first-principles-code/blob/main/PACKAGES.md)** — which Python packages to use, by engineering field.
 
 Every method uses keyword-only arguments and carries a docstring, so the code
 itself doubles as a reference you can read and learn from.
@@ -96,7 +96,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 | `uv add --dev pytest` | Add a *development-only* dependency (e.g. a test runner) |
 | `uv remove scipy` | Remove a dependency |
 | `uv lock` | Re-resolve and rewrite `uv.lock` without installing |
-| `uv python install 3.14` | Install a specific Python version |
+| `uv python install 3.11` | Install a specific Python version (fpc supports 3.11–3.15) |
 
 The golden rule: **prefix anything that needs your packages with `uv run`**.
 You never have to manually `activate` a virtual environment.
@@ -325,14 +325,14 @@ props.lightest_w_shape(required_sx_in3=30)["designation"]  # 'W16x26'
 frame = Utility().read_table(file_path="test_log.xlsx")
 ```
 
-[`examples/sensor_log_analysis.py`](examples/sensor_log_analysis.py) shows the
+[`examples/sensor_log_analysis.py`](https://github.com/kovirlabs/first-principles-code/blob/main/examples/sensor_log_analysis.py) shows the
 full pandas workflow (clean, group, resample, filter, export to Excel), and
-[`examples/vectorization.py`](examples/vectorization.py) compares Python loops
+[`examples/vectorization.py`](https://github.com/kovirlabs/first-principles-code/blob/main/examples/vectorization.py) compares Python loops
 with NumPy arrays.
 
 Units: methods that take plain numbers expect **SI units** (the docstring
 says so for every parameter); use Pint at the boundaries where units are
-mixed. See [docs/units.md](docs/units.md).
+mixed. See [docs/units.md](https://github.com/kovirlabs/first-principles-code/blob/main/docs/units.md).
 
 ## Radiology & medical imaging
 
@@ -374,7 +374,7 @@ safe = dicom.anonymize(dataset=ds)  # blank PHI before sharing
 > is *not* full de-identification under DICOM PS3.15 or HIPAA.
 
 Python packages for medical imaging (SimpleITK, nibabel, MONAI, ...) are
-listed in [PACKAGES.md](PACKAGES.md#medical-imaging).
+listed in [PACKAGES.md](https://github.com/kovirlabs/first-principles-code/blob/main/PACKAGES.md#medical-imaging).
 
 **Learning resources:** [Radiopaedia](https://radiopaedia.org/) (cases and
 physics articles), [pydicom user guide](https://pydicom.github.io/pydicom/stable/tutorials/index.html),
@@ -405,7 +405,7 @@ MATLAB's figures. See `plot_motion()` in `main.py` for a worked example.
 
 ## Python packages for science, engineering & data work
 
-The ten to know first. **[PACKAGES.md](PACKAGES.md)** has the full list,
+The ten to know first. **[PACKAGES.md](https://github.com/kovirlabs/first-principles-code/blob/main/PACKAGES.md)** has the full list,
 organized by engineering field (structural, thermal/fluids, electrical,
 controls, CAD, optimization, medical imaging, tool building, performance).
 
@@ -456,7 +456,10 @@ Add any of them with `uv add <package>`.
 this repository.
 
 ```bash
-# In your own uv project
+# From PyPI (once released; see docs/releasing.md)
+pip install first-principles-code          # or: uv add first-principles-code
+
+# Straight from GitHub, in your own uv project
 uv add git+https://github.com/kovirlabs/first-principles-code
 
 # Or with pip, from a local clone (editable: your edits take effect immediately)
@@ -469,17 +472,52 @@ from fpc import Fluids, Properties
 
 Installing also gives you the `fpc` command
 (`fpc pipe-flow --flow-l-s 12 --diameter-mm 102.3 --length-m 120`; see
-[docs/building-tools.md](docs/building-tools.md)). To pin a version, add
+[docs/building-tools.md](https://github.com/kovirlabs/first-principles-code/blob/main/docs/building-tools.md)). To pin a version, add
 `@<tag-or-commit>` to the git URL.
+
+Every calculation in the library is also reachable from the terminal,
+without writing any code:
+
+```bash
+fpc search "pipe pressure drop"           # find a calculation
+fpc describe Fluids.pipe_flow             # its inputs, units and formula
+fpc run Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001
+```
+
+## Use it with AI assistants (Ollama, LM Studio, Claude, ...)
+
+Small local models are unreliable at arithmetic. The `fpc-mcp` command is an
+[MCP](https://modelcontextprotocol.io) server that lets any MCP-capable AI app
+use this library as its calculator: the model picks the formula, and tested
+Python does the maths. For example, in LM Studio's `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "fpc": {
+      "command": "uvx",
+      "args": ["--from", "first-principles-code[mcp]", "fpc-mcp"]
+    }
+  }
+}
+```
+
+Setup for LM Studio, Ollama front ends (Open WebUI, ollmcp, Continue),
+Claude Desktop and Claude Code is in
+[docs/ai.md](https://github.com/kovirlabs/first-principles-code/blob/main/docs/ai.md). AI *coding* agents should read
+[AGENTS.md](https://github.com/kovirlabs/first-principles-code/blob/main/AGENTS.md) and [llms.txt](https://github.com/kovirlabs/first-principles-code/blob/main/llms.txt), a
+generated one-line-per-method index of the library.
 
 ## Developer tooling
 
 | Command | What it does |
 | --- | --- |
-| `uv sync --all-groups` | Install everything: runtime, dev tools, notebooks, docs, apps |
+| `uv sync --all-groups --all-extras` | Install everything: runtime, dev tools, notebooks, docs, apps, MCP server |
 | `uv run pytest` | Tests, including running every example and notebook |
 | `uv run ruff check .` / `uv run ruff format .` | Lint / auto-format |
 | `uv run mypy` | Type-check the `fpc` package |
+| `uv run -p 3.11 pytest` | Run the tests on a specific Python version |
+| `uv run scripts/python_support.py check` | Supported Python versions declared consistently ([policy](https://github.com/kovirlabs/first-principles-code/blob/main/docs/python-versions.md)) |
 | `uv run pre-commit install` | Run ruff and pytest automatically before each commit |
 | `uv run --group docs mkdocs serve` | Preview the API docs site, generated from the docstrings |
 
@@ -500,6 +538,9 @@ first-principles-code/
 │   ├── properties.py    # reference-table lookups with interpolation
 │   ├── utility.py       # JSON/CSV/Excel/file-picker helpers
 │   ├── cli.py           # the `fpc` terminal command
+│   ├── registry.py      # catalogue of every calculation (types, units, schemas)
+│   ├── mcp_server.py    # `fpc-mcp`: MCP server for AI apps
+│   ├── hints.py         # shared type-hint names (ArrayLike, FloatArray)
 │   ├── data/            # cited reference tables (CSV) + sources
 │   ├── dynamics.py, statics.py, modal.py, thermo.py, fluids.py,
 │   ├── material.py, gear.py, electrical.py, mechatronics.py, controls.py
@@ -509,10 +550,14 @@ first-principles-code/
 ├── notebooks/           # Jupyter notebooks
 ├── docs/                # guides + API docs site sources (mkdocs.yml)
 ├── tests/               # pytest suite (uv run pytest)
+├── scripts/             # maintenance scripts (python_support.py: Python version ratchet)
 ├── pyproject.toml       # metadata, dependencies, tool config
 ├── PACKAGES.md          # Python packages by engineering field
 ├── SPEC.md              # original project design spec
 ├── ROADMAP.md           # improvement backlog
+├── CHANGELOG.md         # release notes
+├── AGENTS.md            # guidance for AI coding agents
+├── llms.txt             # generated index of every method (uv run fpc llms-txt)
 ├── CONTRIBUTOR.md       # how to contribute
 ├── LICENSE              # Apache 2.0
 └── README.md            # you are here
@@ -548,7 +593,7 @@ uv run gui.py
 ## Contributing
 
 Contributions are welcome — this is a teaching template, so clear,
-well-explained code is the product. See [CONTRIBUTOR.md](CONTRIBUTOR.md) for the
+well-explained code is the product. See [CONTRIBUTOR.md](https://github.com/kovirlabs/first-principles-code/blob/main/CONTRIBUTOR.md) for the
 development setup, coding conventions, and how to submit changes.
 
 Quick version of the conventions:
@@ -562,4 +607,4 @@ Quick version of the conventions:
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE). © 2026 Evan Gress.
+Licensed under the [Apache License 2.0](https://github.com/kovirlabs/first-principles-code/blob/main/LICENSE). © 2026 Evan Gress.

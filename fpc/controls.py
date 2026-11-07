@@ -14,27 +14,41 @@ import math
 
 import numpy as np
 
+from fpc.hints import FloatArray
+
 
 class Controls:
     """P, PD, PID, and response-characterisation calculations."""
 
-    def pid_output(self, *, error, integral, derivative, kp, ki=0.0, kd=0.0):
+    def pid_output(
+        self,
+        *,
+        error: float,
+        integral: float,
+        derivative: float,
+        kp: float,
+        ki: float = 0.0,
+        kd: float = 0.0,
+    ) -> float:
         """Single PID control output: u = Kp*e + Ki*integral + Kd*derivative.
 
         Set ``ki``/``kd`` to zero to get P or PD control - the same formula
         covers all three controller types.
 
-        :param error: current error e = setpoint - measurement
-        :param integral: accumulated integral of the error over time
-        :param derivative: rate of change of the error
-        :param kp: proportional gain
-        :param ki: integral gain, defaults to 0 (no integral action)
-        :param kd: derivative gain, defaults to 0 (no derivative action)
-        :returns: controller output (command) u
+        Units are generic: ``[y]`` is whatever the measurement is in (degC,
+        m, rpm...) and ``[u]`` whatever the command is in (V, %, N...).
+
+        :param error: current error e = setpoint - measurement [y]
+        :param integral: accumulated integral of the error over time [y*s]
+        :param derivative: rate of change of the error [y/s]
+        :param kp: proportional gain [u/y]
+        :param ki: integral gain, defaults to 0 (no integral action) [u/(y*s)]
+        :param kd: derivative gain, defaults to 0 (no derivative action) [u*s/y]
+        :returns: controller output (command) u [u]
         """
         return kp * error + ki * integral + kd * derivative
 
-    def damping_from_overshoot(self, *, percent_overshoot):
+    def damping_from_overshoot(self, *, percent_overshoot: float) -> float:
         """Damping ratio that produces a given step-response overshoot.
 
         Inverts  %OS = exp(-zeta*pi / sqrt(1-zeta^2)) * 100.
@@ -45,7 +59,9 @@ class Controls:
         ln_os = math.log(percent_overshoot / 100.0)
         return -ln_os / math.sqrt(math.pi**2 + ln_os**2)
 
-    def settling_time(self, *, damping_ratio, natural_frequency, tolerance=0.02):
+    def settling_time(
+        self, *, damping_ratio: float, natural_frequency: float, tolerance: float = 0.02
+    ) -> float:
         """Approximate settling time of a second-order system.
 
         t_s ~= -ln(tolerance) / (zeta * omega_n).  The default 2% tolerance is
@@ -53,7 +69,7 @@ class Controls:
 
         :param damping_ratio: damping ratio zeta [-]
         :param natural_frequency: undamped natural frequency omega_n [rad/s]
-        :param tolerance: settling band as a fraction, defaults to 0.02 (2%)
+        :param tolerance: settling band as a fraction, defaults to 0.02 (2%) [-]
         :returns: settling time [s]
         """
         return -math.log(tolerance) / (damping_ratio * natural_frequency)
@@ -61,30 +77,33 @@ class Controls:
     def simulate_pid_first_order(
         self,
         *,
-        setpoint,
-        time_constant,
-        gain,
-        kp,
-        ki=0.0,
-        kd=0.0,
-        dt=0.01,
-        duration=10.0,
-    ):
+        setpoint: float,
+        time_constant: float,
+        gain: float,
+        kp: float,
+        ki: float = 0.0,
+        kd: float = 0.0,
+        dt: float = 0.01,
+        duration: float = 10.0,
+    ) -> tuple[FloatArray, FloatArray]:
         """Simulate a PID loop controlling a first-order plant.
 
         The plant is  tau * y' + y = gain * u  (a motor, a heater, a tank...).
         We step it forward in time with a simple Euler integration so you can
         plot or inspect how the controlled output approaches the setpoint.
 
-        :param setpoint: target value the controller should reach
+        Units follow :meth:`pid_output`: ``[y]`` is the plant output's unit and
+        ``[u]`` the controller command's unit.
+
+        :param setpoint: target value the controller should reach [y]
         :param time_constant: plant time constant tau [s]
-        :param gain: plant steady-state gain (output per unit input)
-        :param kp: proportional gain
-        :param ki: integral gain, defaults to 0
-        :param kd: derivative gain, defaults to 0
+        :param gain: plant steady-state gain (output per unit input) [y/u]
+        :param kp: proportional gain [u/y]
+        :param ki: integral gain, defaults to 0 [u/(y*s)]
+        :param kd: derivative gain, defaults to 0 [u*s/y]
         :param dt: simulation time step [s], defaults to 0.01
         :param duration: total simulated time [s], defaults to 10
-        :returns: tuple (time array [s], output array) as numpy arrays
+        :returns: tuple (time array [s], output array [y]) as numpy arrays
         """
         steps = int(duration / dt)
         time = np.linspace(0.0, duration, steps)

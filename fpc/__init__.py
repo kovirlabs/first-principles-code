@@ -19,6 +19,15 @@ The classes are intentionally lightweight (no shared state) so that each method
 reads as a self-contained, well-documented worked example.
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
+# The version number lives in one place, pyproject.toml. Installed packages
+# carry it as metadata, so read it from there instead of repeating it here.
+try:
+    __version__ = version("first-principles-code")
+except PackageNotFoundError:  # running from a source tree that was never installed
+    __version__ = "0.0.0+unknown"
+
 # Re-export the domain classes so callers can also write
 # ``from fpc import Dynamics``. Keeping this list in one place documents
 # everything the library currently offers.

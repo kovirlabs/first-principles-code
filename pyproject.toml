@@ -6,9 +6,39 @@ name = "first-principles-code"
 version = "0.1.0"
 description = "A teaching library of first-principles engineering calculations in Python."
 readme = "README.md"
-requires-python = ">=3.14"
+# Oldest Python supported. Policy (docs/python-versions.md): every CPython
+# version that has not reached end-of-life. Change it only with
+# `uv run scripts/python_support.py set ...`, which updates every place that
+# depends on it.
+requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
+authors = [{ name = "Evan Gress" }]
+# Keywords and classifiers are what PyPI search and its sidebar filters use.
+# The full classifier list is at https://pypi.org/classifiers/
+keywords = [
+    "engineering", "mechanical", "thermodynamics", "fluid-mechanics", "statics",
+    "dynamics", "controls", "radiology", "units", "education", "mcp",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Manufacturing",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Typing :: Typed",
+]
 dependencies = [
     "matplotlib>=3.10.9",
     "numpy>=2.4.6",
@@ -17,13 +47,29 @@ dependencies = [
     "pint>=0.25.3",
     "pydicom>=3.0.2",
     "scipy>=1.17.1",
-    "scipy-stubs~=1.17.1",
 ]
 
-# Installing the package also installs an `fpc` terminal command that runs
-# fpc/cli.py:main (see docs/building-tools.md, rung 5).
+# Links shown in the PyPI sidebar.
+[project.urls]
+Homepage = "https://github.com/kovirlabs/first-principles-code"
+Documentation = "https://kovirlabs.github.io/first-principles-code/"
+Source = "https://github.com/kovirlabs/first-principles-code"
+Issues = "https://github.com/kovirlabs/first-principles-code/issues"
+Changelog = "https://github.com/kovirlabs/first-principles-code/blob/main/CHANGELOG.md"
+
+# Installing the package also installs terminal commands. `fpc` runs
+# fpc/cli.py:main (see docs/building-tools.md, rung 5); `fpc-mcp` starts the
+# MCP server that lets AI apps call the library (see docs/ai.md).
 [project.scripts]
 fpc = "fpc.cli:main"
+fpc-mcp = "fpc.mcp_server:main"
+
+# Optional extras: `pip install "first-principles-code[mcp]"` adds the MCP
+# server's dependency. Kept optional so the core library stays lean.
+[project.optional-dependencies]
+mcp = [
+    "mcp>=2.3",
+]
 
 # The build system turns this repo into an installable package, so other
 # projects can `uv add git+https://github.com/kovirlabs/first-principles-code`
@@ -37,6 +83,11 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["fpc"]
 
+# The source distribution (sdist) is the "source code" download on PyPI.
+# Ship the package, its docs and licence; leave out notebooks, CI config, etc.
+[tool.hatch.build.targets.sdist]
+include = ["/fpc", "/README.md", "/LICENSE", "/CHANGELOG.md", "/llms.txt"]
+
 [dependency-groups]
 apps = [
     "streamlit>=1.67.0",
@@ -47,6 +98,9 @@ dev = [
     "pre-commit>=4.7.0",
     "pytest>=9.0.3",
     "ruff>=0.17.4",
+    # Type stubs are only needed by mypy, so they live here, not in the
+    # runtime dependencies every user installs.
+    "scipy-stubs>=1.17.1",
 ]
 docs = [
     "mkdocs-material>=9.8.0",
@@ -56,6 +110,22 @@ notebooks = [
     "ipykernel>=7.4.0",
     "jupyter>=1.1.1",
     "nbclient>=0.11.0",
+]
+
+# --- uv: lockfile resolution across the supported Python versions ---------
+# numpy, scipy and pint dropped Python 3.11 in their newest releases, and their
+# last 3.11-compatible releases ship no wheels for the newest Python. Users are
+# unaffected (pip picks the right release for their Python automatically), but
+# uv.lock records ONE set of versions, so these constraints make it "fork":
+# older releases on 3.11, current ones everywhere else. Remove each line once
+# the oldest supported Python is >= the version in its marker
+# (scripts/python_support.py reminds you).
+[tool.uv]
+constraint-dependencies = [
+    "numpy>=2.5; python_version >= '3.12'",
+    "scipy>=1.18; python_version >= '3.12'",
+    "pint>=0.26; python_version >= '3.12'",
+    "scipy-stubs>=1.18; python_version >= '3.12'",
 ]
 
 # pytest configuration: where to find tests and how to report.
@@ -71,7 +141,7 @@ pythonpath = ["."]
 # global ruff config a contributor has.
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py311"  # oldest supported Python: flags newer syntax
 
 [tool.ruff.format]
 # Notebooks are generated by notebooks/make_notebooks.py; format that file
@@ -101,7 +171,7 @@ known-first-party = ["fpc", "gui"]
 # Starts non-strict: most of the library has no annotations yet, and mypy
 # skips unannotated function bodies. Tighten gradually as hints are added.
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.11"  # check against the oldest supported Python
 packages = ["fpc"]
 ignore_missing_imports = true
 warn_unused_ignores = true

@@ -1,0 +1,182 @@
+# First Principles Code (fpc)
+
+> First-principles engineering calculations in Python. Every method is
+> keyword-only and takes plain SI floats unless its docstring says otherwise.
+
+Usage: `from fpc import Fluids; Fluids().reynolds_number(density=998, ...)`.
+Reference tables live in `fpc/data/` and are read with `fpc.Properties`.
+Files, dialogs and DICOM I/O are in `fpc.Utility` and `fpc.Dicom`.
+Each line below is `method(param [unit], optional=…)`; call it on an
+instance of the class named in the heading, e.g. `fpc.CT().apply_window(...)`.
+
+## CT
+
+- `apply_window(hounsfield [HU], window_width [HU]=…, window_level [HU]=…, preset=…, output_max [-]=…)`: Map HU values to display grey levels for a chosen window.
+- `classify_hounsfield(hounsfield [HU])`: Return a rough tissue label for a single HU value (teaching aid).
+- `dose_length_product(ctdi_vol_mgy [mGy], scan_length_cm [cm])`: Dose-length product DLP = CTDIvol * scan length  [mGy*cm].
+- `effective_dose_from_dlp(dlp_mgy_cm [mGy*cm], region)`: Estimate adult effective dose:  E ~= k * DLP.
+- `hounsfield_units(attenuation_coefficient [1/cm], water_attenuation [1/cm], air_attenuation [1/cm]=…)`: Convert a linear attenuation coefficient to Hounsfield units.
+- `rescale_to_hounsfield(stored_values [-], rescale_slope [HU per stored value]=…, rescale_intercept [HU]=…)`: Convert raw stored pixel values to HU:  HU = value * slope + intercept.
+- `window_bounds(window_width [HU]=…, window_level [HU]=…, preset=…)`: Lowest and highest HU shown by a window.
+
+## Controls
+
+- `damping_from_overshoot(percent_overshoot [%])`: Damping ratio that produces a given step-response overshoot.
+- `pid_output(error [y], integral [y*s], derivative [y/s], kp [u/y], ki [u/(y*s)]=…, kd [u*s/y]=…)`: Single PID control output: u = Kp*e + Ki*integral + Kd*derivative.
+- `settling_time(damping_ratio [-], natural_frequency [rad/s], tolerance [-]=…)`: Approximate settling time of a second-order system.
+- `simulate_pid_first_order(setpoint [y], time_constant [s], gain [y/u], kp [u/y], ki [u/(y*s)]=…, kd [u*s/y]=…, dt [s]=…, duration [s]=…)`: Simulate a PID loop controlling a first-order plant.
+
+## Design
+
+- `lightest_rectangular_beam(load [N], length [m], modulus [Pa], density [kg/m^3], allowable_stress [Pa], max_deflection [m], width_bounds [m]=…, height_bounds [m]=…, max_aspect_ratio [-]=…)`: Find the lightest rectangular beam that is strong and stiff enough.
+- `rectangular_beam_height_for_deflection(load [N], length [m], modulus [Pa], width [m], max_deflection [m], min_height [m]=…, max_height [m]=…)`: Find the beam height that gives exactly the allowed deflection.
+
+## Dynamics
+
+- `centripetal_acceleration(speed [m/s], radius [m])`: Centripetal acceleration for circular motion: a = v^2 / r.
+- `displacement_constant_acceleration(initial_position [m], initial_velocity [m/s], acceleration [m/s^2], time [s])`: Displacement under constant acceleration: x = x0 + v0*t + 1/2*a*t^2.
+- `final_velocity(initial_velocity [m/s], acceleration [m/s^2], time [s])`: Velocity after constant acceleration: v = v0 + a*t.
+- `kinetic_energy(mass [kg], velocity [m/s])`: Translational kinetic energy: KE = 1/2 * m * v^2.
+- `momentum(mass [kg], velocity [m/s])`: Linear momentum: p = m*v.
+- `newtons_second_law(mass [kg], acceleration [m/s^2])`: Net force from Newton's second law: F = m*a.
+- `projectile_range(speed [m/s], angle_deg [degrees], gravity [m/s^2]=…)`: Horizontal range of a projectile launched over flat ground.
+- `projectile_time_of_flight(speed [m/s], angle_deg [degrees], gravity [m/s^2]=…)`: Time a projectile spends in the air over flat ground.
+- `simulate_projectile_drag(speed [m/s], angle_deg [degrees], mass [kg], drag_coefficient [-], frontal_area [m^2], air_density [kg/m^3]=…, gravity [m/s^2]=…, max_time [s]=…)`: Simulate 2-D projectile flight WITH quadratic air drag.
+- `velocity_from_distance(initial_velocity [m/s], acceleration [m/s^2], distance [m])`: Velocity after travelling a distance: v^2 = v0^2 + 2*a*d.
+
+## Electrical
+
+- `capacitive_reactance(frequency [Hz], capacitance [F])`: Reactance of a capacitor: Xc = 1 / (2*pi*f*C).
+- `inductive_reactance(frequency [Hz], inductance [H])`: Reactance of an inductor: Xl = 2*pi*f*L.
+- `ohms_law_voltage(current [A], resistance [ohm])`: Voltage from Ohm's law: V = I * R.
+- `parallel_resistance(resistances [ohm])`: Total resistance of resistors in parallel.
+- `power(voltage [V], current [A])`: Electrical power: P = V * I.
+- `rc_time_constant(resistance [ohm], capacitance [F])`: Time constant of an RC circuit: tau = R * C.
+- `series_resistance(resistances [ohm])`: Total resistance of resistors in series (they simply add).
+
+## Fluids
+
+- `bernoulli_pressure(density [kg/m^3], velocity_1 [m/s], height_1 [m], pressure_1 [Pa], velocity_2 [m/s], height_2 [m], gravity [m/s^2]=…)`: Downstream static pressure from Bernoulli's equation.
+- `colebrook_friction_factor(reynolds [-], relative_roughness [-])`: Darcy friction factor from the Colebrook equation, solved numerically.
+- `continuity_velocity(area_in [m^2], velocity_in [m/s], area_out [m^2])`: Outlet velocity from conservation of mass: A1*v1 = A2*v2.
+- `dynamic_pressure(density [kg/m^3], velocity [m/s])`: Dynamic pressure of a moving fluid: q = 1/2 * rho * v^2.
+- `pipe_flow(flow [m^3/s], diameter [m], length [m], roughness [m], density [kg/m^3], viscosity [Pa*s])`: Everything about steady flow through one straight pipe, in one call.
+- `pipe_head_loss(friction_factor [-], length [m], diameter [m], velocity [m/s], gravity [m/s^2]=…)`: Major head loss in a pipe (Darcy-Weisbach equation).
+- `reynolds_number(density [kg/m^3], velocity [m/s], length [m], viscosity [Pa*s])`: Reynolds number: Re = rho*v*L / mu.
+- `swamee_jain_friction_factor(reynolds [-], relative_roughness [-])`: Explicit approximation to the Colebrook friction factor (Swamee-Jain).
+
+## Gear
+
+- `center_distance(module [mm], driver_teeth [-], driven_teeth [-])`: Center distance between two meshing spur gears.
+- `gear_ratio(driver_teeth [-], driven_teeth [-])`: Gear ratio of a meshing pair: ratio = driven / driver.
+- `output_speed(input_speed [rpm or rad/s], gear_ratio [-])`: Output shaft speed after a ratio: n_out = n_in / ratio.
+- `output_torque(input_torque [N*m], gear_ratio [-], efficiency [-]=…)`: Output torque after a ratio: T_out = T_in * ratio * efficiency.
+- `pitch_diameter(teeth [-], module [mm])`: Pitch diameter of a spur gear (metric): d = module * teeth.
+- `powertrain_ratio(stage_ratios [-])`: Overall ratio of gear stages in series (the product of each ratio).
+
+## MRI
+
+- `larmor_frequency(field_strength_t [T], nucleus=…)`: Precession (Larmor) frequency  f = gamma_bar * B0.
+- `sequence_weighting(repetition_time_ms [ms], echo_time_ms [ms])`: Classify a spin-echo TR/TE pair as T1-, T2-, or PD-weighted.
+- `spin_echo_signal(repetition_time_ms [ms], echo_time_ms [ms], t1_ms [ms]=…, t2_ms [ms]=…, proton_density [-]=…, tissue=…)`: Relative spin-echo signal  S = PD * (1 - exp(-TR/T1)) * exp(-TE/T2).
+- `t1_recovery(time_ms [ms], t1_ms [ms], equilibrium_magnetization [-]=…)`: Longitudinal recovery after a 90 deg pulse:  Mz = M0 * (1 - exp(-t/T1)).
+- `t2_decay(time_ms [ms], t2_ms [ms], initial_magnetization [-]=…)`: Transverse decay:  Mxy = M0 * exp(-t/T2).
+
+## Material
+
+- `axial_deformation(force [N], length [m], area [m^2], modulus [Pa])`: Axial stretch/compression of a bar: dL = F*L / (A*E).
+- `bending_stress(moment [N*m], distance [m], moment_of_inertia [m^4])`: Bending (flexural) stress in a beam: sigma = M*c / I.
+- `euler_buckling_load(modulus [Pa], moment_of_inertia [m^4], length [m], end_factor [-]=…)`: Critical buckling load of a slender column (Euler's formula).
+- `strain(change_in_length [m], original_length [m])`: Engineering strain: epsilon = dL / L0 (dimensionless).
+- `stress(force [N], area [m^2])`: Engineering stress: sigma = F / A.
+- `thermal_expansion(coefficient [1/K], original_length [m], delta_temperature [K])`: Length change from temperature: dL = alpha * L0 * dT.
+- `youngs_modulus(stress [Pa], strain [-])`: Young's modulus (stiffness) from Hooke's law: E = sigma / strain.
+
+## Mechatronics
+
+- `acceleration_torque(inertia [kg*m^2], angular_acceleration [rad/s^2])`: Torque to angularly accelerate an inertia: T = J * alpha.
+- `ballscrew_linear_speed(motor_rpm [rev/min], lead [mm])`: Linear speed of a ball-screw nut from motor speed.
+- `ballscrew_torque(thrust_force [N], lead [m], efficiency [-]=…)`: Motor torque needed to drive a thrust load through a ball screw.
+- `calculate_inertia_ratio(j_motor [kg*m^2], mass [kg], pitch [m/rev], teeth_motor_pulley [-], teeth_screw_pulley [-], j_screw [kg*m^2], j_pulley_motor [kg*m^2], j_pulley_screw [kg*m^2])`: Calculates the inertia ratio of a servomotor driving a ballscrew via a timing belt.
+- `motor_power(torque [N*m], speed_rpm [rev/min])`: Mechanical power from torque and rotational speed.
+- `reflected_inertia(load_inertia [kg*m^2], gear_ratio [-])`: Load inertia as the motor "sees" it through a gearbox.
+
+## Modal
+
+- `damped_natural_frequency(stiffness [N/m], mass [kg], damping [N*s/m])`: Damped natural frequency omega_d = omega_n * sqrt(1 - zeta^2).
+- `damping_ratio(damping [N*s/m], mass [kg], stiffness [N/m])`: Dimensionless damping ratio zeta = c / (2*sqrt(k*m)).
+- `fit_damped_response(time [s], displacement [m], guess_frequency_hz [Hz]=…)`: Recover natural frequency and damping ratio from measured ring-down.
+- `mode_shapes(mass_matrix [kg], stiffness_matrix [N/m])`: Natural frequencies and mode shapes of a multi-DOF system.
+- `natural_frequency(stiffness [N/m], mass [kg])`: Undamped natural frequency of an SDOF system.
+- `simulate_free_vibration(mass [kg], stiffness [N/m], damping [N*s/m], initial_displacement [m], initial_velocity [m/s]=…, duration [s], num_points [-]=…)`: Simulate the free ring-down of an SDOF spring-mass-damper.
+
+## Properties
+
+- `interpolate(table, x_column, y_column, x [units of ``x_column``], method=…)`: Interpolate ``y_column`` at ``x`` using any loaded table.
+- `lightest_w_shape(required_sx_in3 [in^3])`: Pick the lightest AISC W-shape with enough section modulus.
+- `list_tables()`: Return the names of the available reference tables.
+- `load_table(name)`: Load one reference table as a pandas DataFrame.
+- `material(name)`: Return one material's properties as a plain dictionary.
+- `water_liquid(temperature_c [degC], property, method=…)`: Liquid water property at 1 atm and a given temperature.
+- `water_saturation(temperature_c [degC], property, method=…)`: Saturated-water property at a temperature (a steam-table lookup).
+
+## Radiation
+
+- `decay_constant(half_life [any time unit])`: Decay constant lambda = ln(2) / T_half.
+- `effective_dose(organ_equivalent_doses [Sv])`: Effective dose E = sum over organs of w_T * H_T.
+- `effective_half_life(physical_half_life [any time unit], biological_half_life [same unit as Tp])`: Effective half-life in the body:  1/Te = 1/Tp + 1/Tb.
+- `equivalent_dose(absorbed_dose [Gy], radiation_type)`: Equivalent dose H_T = w_R * D_T.
+- `half_value_layer(attenuation_coefficient [1/cm])`: Half-value layer HVL = ln(2) / mu.
+- `inverse_square_law(initial_intensity [any unit], initial_distance [any length unit], new_distance [same unit as d1])`: Intensity at a new distance from a point source.
+- `linear_attenuation_coefficient(mass_attenuation_coefficient [cm^2/g], density [g/cm^3])`: Linear coefficient mu [1/cm] from mass coefficient mu/rho [cm^2/g].
+- `neutron_weighting_factor(energy_mev [MeV])`: ICRP 103 continuous radiation weighting factor for neutrons.
+- `photon_wavelength(energy_kev [keV])`: Photon wavelength from energy:  lambda = h*c / E.
+- `remaining_activity(initial_activity [MBq, mCi, ... any activity unit], half_life [any time unit], elapsed_time [same unit as half_life])`: Activity left after decay:  A = A0 * exp(-lambda * t).
+- `shielding_thickness(attenuation_coefficient [1/cm], transmission [-])`: Thickness needed to let only a given fraction of the beam through.
+- `tenth_value_layer(attenuation_coefficient [1/cm])`: Tenth-value layer TVL = ln(10) / mu  (~3.32 HVLs).
+- `transmitted_intensity(initial_intensity [any unit], attenuation_coefficient [1/cm], thickness [cm])`: Narrow-beam (Beer-Lambert) attenuation:  I = I0 * exp(-mu * x).
+
+## Radiography
+
+- `exposure_index_deviation(exposure_index [-], target_exposure_index [-])`: Deviation index DI = 10 * log10(EI / EI_target)  (IEC 62494-1).
+- `exposure_maintenance_mas(original_mas [mA*s], original_sid [any length unit], new_sid [same unit as original_sid])`: Density/exposure maintenance formula:  mAs2 = mAs1 * (SID2 / SID1)^2.
+- `fifteen_percent_rule(kvp [kVp], mas [mA*s], steps [-]=…)`: Trade kVp for mAs while keeping the same exposure to the IR.
+- `geometric_unsharpness(focal_spot_size [mm], sid [any length unit], oid [same unit as sid])`: Penumbra (edge blur) width:  Ug = focal spot * OID / SOD.
+- `grid_mas(original_mas [mA*s], original_grid, new_grid)`: mAs compensation when adding, removing, or changing a grid.
+- `heat_units(kvp [kVp], tube_current_ma [mA], exposure_time_s [s], generator=…, exposures [-]=…)`: Anode heat load in heat units:  HU = kVp * mA * s * C * exposures.
+- `magnification_factor(sid [any length unit], sod [same unit as sid])`: Magnification factor MF = SID / SOD  (always >= 1).
+- `mas(tube_current_ma [mA], exposure_time_s [s])`: Tube current-time product mAs = mA * s.
+- `nyquist_limit(pixel_pitch_mm [mm])`: Highest resolvable spatial frequency of a digital detector.
+- `object_size(image_size [any length unit], sid [any length unit], sod [same unit as sid])`: True anatomical size from a measured image:  object = image / MF.
+
+## Statics
+
+- `axial_stress(force [N], area [m^2])`: Normal (axial) stress: sigma = F / A.
+- `beam_reactions_point_load(span [m], load [N], load_position [m])`: Support reactions for a simply supported beam with one point load.
+- `factor_of_safety(strength [Pa], applied_stress [Pa])`: Factor of safety: FoS = material strength / applied stress.
+- `friction_force(coefficient [-], normal_force [N])`: Maximum dry friction force: F = mu * N.
+- `moment(force [N], distance [m])`: Moment (torque) of a force about a point: M = F * d.
+- `resultant_2d(fx [N], fy [N])`: Combine perpendicular force components into magnitude and direction.
+
+## Thermo
+
+- `carnot_efficiency(hot_temperature [K], cold_temperature [K])`: Maximum possible efficiency of a heat engine: 1 - Tc/Th.
+- `celsius_to_kelvin(celsius [degC])`: Convert temperature from degrees Celsius to kelvin.
+- `conduction_heat_rate(conductivity [W/(m*K)], area [m^2], delta_temperature [K], thickness [m])`: Steady heat conduction through a wall (Fourier's law).
+- `convection_heat_rate(coefficient [W/(m^2*K)], area [m^2], delta_temperature [K])`: Convective heat transfer (Newton's law of cooling).
+- `ideal_gas_pressure(moles [mol], temperature [K], volume [m^3])`: Pressure from the ideal gas law: P = n*R*T / V.
+- `log_mean_temperature_difference(delta_t_1 [K], delta_t_2 [K])`: Log-mean temperature difference (LMTD) for a heat exchanger.
+- `sensible_heat(mass [kg], specific_heat [J/(kg*K)], delta_temperature [K or degC, same size])`: Heat to change a substance's temperature: Q = m*c*dT.
+
+## Ultrasound
+
+- `acoustic_impedance(density [kg/m^3], speed [m/s])`: Acoustic impedance  Z = rho * c  [rayl = kg/(m^2*s)].
+- `attenuation_db(frequency_mhz [MHz], path_length_cm [cm], coefficient_db_per_cm_mhz [dB/(cm*MHz)]=…)`: Total attenuation  A = alpha * f * L  [dB].
+- `axial_resolution(frequency_mhz [MHz], cycles_per_pulse [-]=…, speed [m/s]=…)`: Axial resolution = spatial pulse length / 2 = n * lambda / 2.
+- `doppler_shift(transmitted_frequency_mhz [MHz], velocity [m/s], angle_deg [degrees], speed [m/s]=…)`: Doppler frequency shift  df = 2 * f0 * v * cos(theta) / c.
+- `doppler_velocity(transmitted_frequency_mhz [MHz], doppler_shift_hz [Hz], angle_deg [degrees], speed [m/s]=…)`: Blood velocity from a measured Doppler shift (the inverse problem).
+- `echo_depth(round_trip_time_us [us], speed [m/s]=…)`: Reflector depth from echo time:  d = c * t / 2.
+- `intensity_reflection_coefficient(impedance_1 [rayl], impedance_2 [rayl])`: Fraction of intensity reflected at a boundary:  R = ((Z2-Z1)/(Z2+Z1))^2.
+- `maximum_depth(pulse_repetition_frequency_hz [Hz], speed [m/s]=…)`: Deepest unambiguous echo for a given PRF:  d_max = c / (2 * PRF).
+- `reflection_between(medium_1, medium_2)`: Reflection coefficient between two named media from :attr:`MEDIA`.
+- `wavelength(frequency_mhz [MHz], speed [m/s]=…)`: Wavelength  lambda = c / f.

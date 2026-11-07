@@ -33,8 +33,10 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install Python 3.14
-        run: uv python install 3.14
+      - name: Install the newest supported Python (managed by scripts/python_support.py)
+        run: |
+          uv python install 3.15
+          echo "UV_PYTHON=3.15" >> "$GITHUB_ENV"
 
       - name: Build (strict - warnings are errors)
         env:

@@ -12,6 +12,12 @@ memorizing "fat is bright on T1".
 """
 
 import math
+from typing import Literal
+
+# Accepted nucleus and tissue names (the keys of the class tables below) as
+# ``Literal`` types, so a typo is caught by mypy and by the AI tool schemas.
+Nucleus = Literal["1H", "13C", "19F", "23Na", "31P"]
+Tissue = Literal["fat", "white_matter", "grey_matter", "csf", "muscle", "liver"]
 
 
 class MRI:
@@ -39,7 +45,7 @@ class MRI:
         "liver": {"t1": 500, "t2": 40, "proton_density": 0.7},
     }
 
-    def larmor_frequency(self, *, field_strength_t, nucleus="1H"):
+    def larmor_frequency(self, *, field_strength_t: float, nucleus: Nucleus = "1H") -> float:
         """Precession (Larmor) frequency  f = gamma_bar * B0.
 
         The RF coil must transmit and receive at exactly this frequency; the
@@ -54,40 +60,44 @@ class MRI:
             raise ValueError(f"unknown nucleus {nucleus!r}")
         return self.GYROMAGNETIC_RATIO_MHZ_PER_T[nucleus] * field_strength_t
 
-    def t1_recovery(self, *, time_ms, t1_ms, equilibrium_magnetization=1.0):
+    def t1_recovery(
+        self, *, time_ms: float, t1_ms: float, equilibrium_magnetization: float = 1.0
+    ) -> float:
         """Longitudinal recovery after a 90 deg pulse:  Mz = M0 * (1 - exp(-t/T1)).
 
         After one T1, magnetization is back to ~63% of equilibrium.
 
         :param time_ms: time since the 90 deg pulse [ms]
         :param t1_ms: tissue T1 [ms]
-        :param equilibrium_magnetization: M0 (defaults to 1, i.e. a fraction)
-        :returns: Mz, same unit as M0
+        :param equilibrium_magnetization: M0 (defaults to 1, i.e. a fraction) [-]
+        :returns: Mz, same unit as M0 [-]
         """
         return equilibrium_magnetization * (1.0 - math.exp(-time_ms / t1_ms))
 
-    def t2_decay(self, *, time_ms, t2_ms, initial_magnetization=1.0):
+    def t2_decay(
+        self, *, time_ms: float, t2_ms: float, initial_magnetization: float = 1.0
+    ) -> float:
         """Transverse decay:  Mxy = M0 * exp(-t/T2).
 
         After one T2, only ~37% of the transverse signal remains.
 
         :param time_ms: time since excitation [ms]
         :param t2_ms: tissue T2 [ms]
-        :param initial_magnetization: Mxy at t = 0 (defaults to 1)
-        :returns: Mxy, same unit as the initial magnetization
+        :param initial_magnetization: Mxy at t = 0 (defaults to 1) [-]
+        :returns: Mxy, same unit as the initial magnetization [-]
         """
         return initial_magnetization * math.exp(-time_ms / t2_ms)
 
     def spin_echo_signal(
         self,
         *,
-        repetition_time_ms,
-        echo_time_ms,
-        t1_ms=None,
-        t2_ms=None,
-        proton_density=1.0,
-        tissue=None,
-    ):
+        repetition_time_ms: float,
+        echo_time_ms: float,
+        t1_ms: float | None = None,
+        t2_ms: float | None = None,
+        proton_density: float = 1.0,
+        tissue: Tissue | None = None,
+    ) -> float:
         """Relative spin-echo signal  S = PD * (1 - exp(-TR/T1)) * exp(-TE/T2).
 
         TR controls how much T1 recovery happens between pulses; TE controls
@@ -111,7 +121,7 @@ class MRI:
         decayed = math.exp(-echo_time_ms / t2_ms)
         return proton_density * recovered * decayed
 
-    def sequence_weighting(self, *, repetition_time_ms, echo_time_ms):
+    def sequence_weighting(self, *, repetition_time_ms: float, echo_time_ms: float) -> str:
         """Classify a spin-echo TR/TE pair as T1-, T2-, or PD-weighted.
 
         Rule of thumb at 1.5 T:

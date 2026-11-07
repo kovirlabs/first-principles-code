@@ -44,6 +44,8 @@ markdown_extensions:
   - tables
   - pymdownx.highlight
   - pymdownx.superfences
+  # Content tabs (=== "Tab name") used in docs/ai.md and docs/releasing.md.
+  - pymdownx.tabbed: {alternate_style: true}
   - pymdownx.arithmatex: {generic: true}
 
 nav:
@@ -51,6 +53,9 @@ nav:
   - Guides:
       - Units - floats or Pint?: units.md
       - From calculation to tool: building-tools.md
+      - Using fpc with AI assistants: ai.md
+      - Releasing to PyPI: releasing.md
+      - Supported Python versions: python-versions.md
   - API reference:
       - Mechanics:
           - Dynamics: api/dynamics.md
@@ -72,6 +77,8 @@ nav:
           - Utility (files, tables, dialogs): api/utility.md
           - Units registry: api/units.md
           - fpc command line: api/cli.md
+          - Calculation registry: api/registry.md
+          - MCP server: api/mcp_server.md
       - Radiology:
           - Radiation: api/radiation.md
           - Radiography: api/radiography.md

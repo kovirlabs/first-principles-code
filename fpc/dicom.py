@@ -20,9 +20,19 @@ without any patient data::
 """
 
 import copy
+import os
+from typing import Any
 
 import numpy as np
 import pydicom
+
+from fpc.hints import ArrayLike, FloatArray
+
+# A file location may be a plain string or any path-like object such as
+# ``pathlib.Path``; ``os.PathLike[str]`` is the type that covers the latter.
+# A plain assignment (not a ``type`` statement) keeps the alias transparent
+# to ``typing.get_type_hints``.
+FilePath = str | os.PathLike[str]
 
 
 class Dicom:
@@ -63,7 +73,7 @@ class Dicom:
         "AccessionNumber",
     )
 
-    def read(self, *, path):
+    def read(self, *, path: FilePath) -> pydicom.Dataset:
         """Read a DICOM file from disk.
 
         :param path: file path (str or pathlib.Path)
@@ -72,7 +82,7 @@ class Dicom:
         """
         return pydicom.dcmread(path)
 
-    def summary(self, *, dataset):
+    def summary(self, *, dataset: pydicom.Dataset) -> dict[str, Any]:
         """Collect the key technical header fields into a plain dict.
 
         Uses ``dataset.get(keyword)`` rather than ``dataset.keyword`` so a
@@ -85,7 +95,7 @@ class Dicom:
         # A dict comprehension: build the whole dictionary in one expression.
         return {keyword: dataset.get(keyword) for keyword in self.SUMMARY_KEYWORDS}
 
-    def pixel_array_in_units(self, *, dataset):
+    def pixel_array_in_units(self, *, dataset: pydicom.Dataset) -> FloatArray:
         """Pixel data converted to real-world values (HU for CT).
 
         Applies  value * RescaleSlope + RescaleIntercept. If the tags are
@@ -93,27 +103,29 @@ class Dicom:
         unchanged as floats.
 
         :param dataset: a pydicom Dataset containing pixel data
-        :returns: float numpy array
+        :returns: float numpy array [HU for CT, else stored units]
         """
         slope = float(dataset.get("RescaleSlope", 1.0))
         intercept = float(dataset.get("RescaleIntercept", 0.0))
         return dataset.pixel_array.astype(float) * slope + intercept
 
-    def pixel_spacing_mm(self, *, dataset):
+    def pixel_spacing_mm(self, *, dataset: pydicom.Dataset) -> tuple[float, float] | None:
         """Physical size of one pixel as (row spacing, column spacing) in mm.
 
         Needed for any real measurement: a length in pixels times the spacing
         gives millimetres.
 
         :param dataset: a pydicom Dataset
-        :returns: tuple (row_mm, col_mm), or None if the tag is missing
+        :returns: tuple (row_mm, col_mm), or None if the tag is missing [mm]
         """
         spacing = dataset.get("PixelSpacing")
         if spacing is None:
             return None
         return float(spacing[0]), float(spacing[1])
 
-    def anonymize(self, *, dataset, replacement="ANONYMIZED"):
+    def anonymize(
+        self, *, dataset: pydicom.Dataset, replacement: str = "ANONYMIZED"
+    ) -> pydicom.Dataset:
         """Blank the direct patient identifiers and drop private tags.
 
         Works on a DEEP copy so the original dataset is left untouched -
@@ -135,7 +147,7 @@ class Dicom:
         cleaned.remove_private_tags()
         return cleaned
 
-    def save(self, *, dataset, path):
+    def save(self, *, dataset: pydicom.Dataset, path: FilePath) -> None:
         """Write a Dataset back to disk as a DICOM file.
 
         :param dataset: a pydicom Dataset
@@ -143,7 +155,7 @@ class Dicom:
         """
         dataset.save_as(path)
 
-    def to_png(self, *, image, path):
+    def to_png(self, *, image: ArrayLike, path: FilePath) -> None:
         """Save a 2-D greyscale array (e.g. a windowed CT slice) as a PNG.
 
         Uses matplotlib's ``imsave`` so no extra imaging library is needed.
