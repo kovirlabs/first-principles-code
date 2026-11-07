@@ -7,6 +7,9 @@ A template Python project that **teaches engineers to solve real engineering
 problems in Python** — and shows that the open-source scientific stack
 (`numpy`, `scipy`, and friends) can replace expensive proprietary tools.
 
+📖 **Documentation:** <https://kovirlabs.github.io/first-principles-code/>,
+with guides and an API reference generated from the docstrings.
+
 You get:
 
 - **`main.py`** — a worked example that calculates displacement from
