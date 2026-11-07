@@ -53,6 +53,7 @@ nav:
   - Guides:
       - Units - floats or Pint?: units.md
       - From calculation to tool: building-tools.md
+      - Trusting a result - uncertainty and calc sheets: trusting-results.md
       - Using fpc with AI assistants: ai.md
       - Releasing to PyPI: releasing.md
       - Supported Python versions: python-versions.md
@@ -79,6 +80,8 @@ nav:
           - fpc command line: api/cli.md
           - Calculation registry: api/registry.md
           - MCP server: api/mcp_server.md
+          - Uncertainty (Monte Carlo): api/uncertainty.md
+          - Calc reports: api/report.md
       - Radiology:
           - Radiation: api/radiation.md
           - Radiography: api/radiography.md

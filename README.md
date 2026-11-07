@@ -482,7 +482,17 @@ without writing any code:
 fpc search "pipe pressure drop"           # find a calculation
 fpc describe Fluids.pipe_flow             # its inputs, units and formula
 fpc run Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001
+
+# How sure is the answer? Give inputs a spread and run 10 000 cases (Monte Carlo)
+fpc uncertainty Fluids.reynolds_number density=998 velocity=normal:2,0.1 length=0.05 viscosity=0.001
+
+# File it: a Markdown calc sheet with method, inputs and units, result, review checklist
+fpc report Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001 --out re.md
 ```
+
+Or use every calculation from a web form, with uncertainty and calc-sheet
+tabs: `uv run streamlit run apps/calculator.py`. See
+[docs/trusting-results.md](https://github.com/kovirlabs/first-principles-code/blob/main/docs/trusting-results.md).
 
 ## Use it with AI assistants (Ollama, LM Studio, Claude, ...)
 
@@ -540,17 +550,20 @@ first-principles-code/
 │   ├── cli.py           # the `fpc` terminal command
 │   ├── registry.py      # catalogue of every calculation (types, units, schemas)
 │   ├── mcp_server.py    # `fpc-mcp`: MCP server for AI apps
+│   ├── uncertainty.py   # Monte Carlo on any calculation
+│   ├── report.py        # Markdown calc sheets
 │   ├── hints.py         # shared type-hint names (ArrayLike, FloatArray)
 │   ├── data/            # cited reference tables (CSV) + sources
 │   ├── dynamics.py, statics.py, modal.py, thermo.py, fluids.py,
 │   ├── material.py, gear.py, electrical.py, mechatronics.py, controls.py
 │   └── radiation.py, radiography.py, ct.py, mri.py, ultrasound.py, dicom.py
 ├── examples/            # worked problems, one script each (+ tools/ ladder)
+├── apps/                # Streamlit calculator: a form for every calculation
 ├── templates/           # copy-and-adapt starting script
 ├── notebooks/           # Jupyter notebooks
 ├── docs/                # guides + API docs site sources (mkdocs.yml)
 ├── tests/               # pytest suite (uv run pytest)
-├── scripts/             # maintenance scripts (python_support.py: Python version ratchet)
+├── scripts/             # maintenance: python_support.py (version ratchet), try_local_model.py (MCP + Ollama)
 ├── pyproject.toml       # metadata, dependencies, tool config
 ├── PACKAGES.md          # Python packages by engineering field
 ├── SPEC.md              # original project design spec

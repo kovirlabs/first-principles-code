@@ -31,6 +31,7 @@ dimensions, so they always stay consistent with the beam's geometry.
 
 import math
 from dataclasses import dataclass, field
+from typing import Any
 
 from pint import Quantity
 
@@ -62,7 +63,7 @@ class Beam:
     modulus: Quantity = field(default_factory=lambda: STEEL_MODULUS)
     density: Quantity = field(default_factory=lambda: STEEL_DENSITY)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate units and signs right after the object is created.
 
         Catching a bad input here (e.g. a time passed where a length belongs,
@@ -76,7 +77,7 @@ class Beam:
         self._require(self.density, "[mass] / [length] ** 3", "density")
 
     @staticmethod
-    def _require(quantity, dimensionality, name):
+    def _require(quantity: Any, dimensionality: str, name: str) -> None:
         """Raise a helpful error unless ``quantity`` is positive with the right units."""
         # ``.check()`` confirms the quantity has the expected dimensionality.
         if not hasattr(quantity, "check") or not quantity.check(dimensionality):
@@ -86,12 +87,12 @@ class Beam:
 
     # --- Geometry (computed on demand) ------------------------------------
     @property
-    def area(self):
+    def area(self) -> Quantity:
         """Cross-sectional area A = width * height."""
         return self.width * self.height
 
     @property
-    def moment_of_inertia(self):
+    def moment_of_inertia(self) -> Quantity:
         """Second moment of area about the bending (strong) axis: I = b*h^3/12.
 
         This is the property that resists bending; a taller section (bigger h)
@@ -100,12 +101,12 @@ class Beam:
         return self.width * self.height**3 / 12
 
     @property
-    def mass(self):
+    def mass(self) -> Quantity:
         """Total mass = density * volume = density * area * length."""
         return self.density * self.area * self.length
 
     # --- Structural behaviour ---------------------------------------------
-    def max_deflection_point_load(self, *, load):
+    def max_deflection_point_load(self, *, load: Quantity) -> Quantity:
         """Maximum deflection of a simply supported beam with a central load.
 
         delta = P * L^3 / (48 * E * I).  The result carries length units, so
@@ -119,7 +120,7 @@ class Beam:
         # Reduce to base units so the result reads cleanly as metres.
         return deflection.to_base_units()
 
-    def max_bending_stress_point_load(self, *, load):
+    def max_bending_stress_point_load(self, *, load: Quantity) -> Quantity:
         """Peak bending stress for a simply supported beam, central point load.
 
         The maximum bending moment is M = P*L/4 at midspan; the peak stress is
@@ -134,7 +135,7 @@ class Beam:
         stress = max_moment * distance_to_fibre / self.moment_of_inertia
         return stress.to_base_units()
 
-    def euler_buckling_load(self, *, end_factor=1.0):
+    def euler_buckling_load(self, *, end_factor: float = 1.0) -> Quantity:
         """Critical axial buckling load (Euler), about the weakest axis.
 
         P_cr = pi^2 * E * I_min / (K*L)^2.  A column buckles about whichever

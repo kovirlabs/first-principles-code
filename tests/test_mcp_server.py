@@ -68,3 +68,51 @@ def test_bad_input_comes_back_as_a_readable_error():
 def test_reference_tables_list_columns():
     tables = call("list_reference_tables").structured_content
     assert "density_kg_m3" in tables["water_liquid_1atm"]
+
+
+# --- --domains: one tool per calculation -------------------------------------
+
+
+def list_tools(server):
+    async def go():
+        async with Client(server) as client:
+            return {tool.name: tool for tool in (await client.list_tools()).tools}
+
+    return asyncio.run(go())
+
+
+def test_domains_flag_adds_one_tool_per_calculation_with_the_registry_schema():
+    from fpc import registry
+
+    tools = list_tools(build_server(["Fluids"]))
+    fluids = [c for c in registry.calculations() if c.domain == "Fluids" and c.json_callable]
+    assert len(tools) == 5 + len(fluids)
+
+    tool = tools["fluids_reynolds_number"]
+    schema = tool.input_schema
+    assert sorted(schema["required"]) == ["density", "length", "velocity", "viscosity"]
+    assert schema["properties"]["density"]["type"] == "number"
+    assert "kg/m^3" in schema["properties"]["density"]["description"]
+    assert "Reynolds" in tool.description
+
+
+def test_direct_tool_calculates_and_explains_bad_input():
+    server = build_server(["fluids"])  # any case
+
+    async def go(arguments):
+        async with Client(server) as client:
+            return await client.call_tool("fluids_reynolds_number", arguments)
+
+    args = {"density": 998, "velocity": 2, "length": 0.05, "viscosity": 0.001}
+    result = asyncio.run(go(args))
+    assert not result.is_error
+    assert result.structured_content["result"] == pytest.approx(99800)
+
+    bad = asyncio.run(go({**args, "viscosity": 0}))
+    assert bad.is_error
+    assert "ZeroDivisionError" in bad.content[0].text or "ValueError" in bad.content[0].text
+
+
+def test_unknown_domain_is_rejected_with_choices():
+    with pytest.raises(ValueError, match="Fluids"):
+        build_server(["plumbing"])

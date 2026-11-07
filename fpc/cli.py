@@ -18,8 +18,11 @@ git+https://github.com/kovirlabs/first-principles-code`` anywhere) you can run::
     fpc search "pipe pressure drop"          # find any calculation in the library
     fpc describe Fluids.reynolds_number      # its inputs, units and formula
     fpc run Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001
+    fpc uncertainty Fluids.reynolds_number density=998 velocity=normal:2,0.1 \
+        length=0.05 viscosity=uniform:0.0009,0.0011
+    fpc report Fluids.reynolds_number density=998 velocity=2 length=0.05 viscosity=0.001
 
-The last three are generic: they work for *every* method, because they are
+The last five are generic: they work for *every* method, because they are
 driven by ``fpc.registry`` (a catalogue built from the code's own signatures
 and docstrings) instead of hand-written argument lists.
 
@@ -29,13 +32,15 @@ the way ``git commit`` and ``git push`` share the ``git`` command.
 
 import argparse
 import json
+from collections.abc import Callable
+from typing import Any
 
 from fpc import registry
 from fpc.fluids import Fluids
 from fpc.properties import Properties
 
 
-def _pipe_flow(args):
+def _pipe_flow(args: argparse.Namespace) -> None:
     """Handle ``fpc pipe-flow``."""
     props = Properties()
     t = args.temperature_c
@@ -44,8 +49,8 @@ def _pipe_flow(args):
         diameter=args.diameter_mm / 1000,
         length=args.length_m,
         roughness=args.roughness_mm / 1000,
-        density=props.water_liquid(temperature_c=t, property="density_kg_m3"),
-        viscosity=props.water_liquid(temperature_c=t, property="dynamic_viscosity_pa_s"),
+        density=float(props.water_liquid(temperature_c=t, property="density_kg_m3")),
+        viscosity=float(props.water_liquid(temperature_c=t, property="dynamic_viscosity_pa_s")),
     )
     print(f"velocity        {result['velocity']:.3f} m/s")
     print(f"Reynolds        {result['reynolds']:.0f}")
@@ -54,7 +59,7 @@ def _pipe_flow(args):
     print(f"pressure drop   {result['pressure_drop'] / 1000:.2f} kPa")
 
 
-def _water(args):
+def _water(args: argparse.Namespace) -> None:
     """Handle ``fpc water``: print every liquid-water property at a temperature."""
     props = Properties()
     columns = props.load_table(name="water_liquid_1atm").columns.drop("temperature_c")
@@ -64,13 +69,13 @@ def _water(args):
         print(f"  {column:<28} {value:.5g}")
 
 
-def _search(args):
+def _search(args: argparse.Namespace) -> None:
     """Handle ``fpc search``: list calculations matching some keywords."""
     for calc in registry.search(args.query, limit=args.limit, domain=args.domain):
         print(f"{calc.key:<45} {calc.summary}")
 
 
-def _describe(args):
+def _describe(args: argparse.Namespace) -> None:
     """Handle ``fpc describe``: show one calculation's inputs and units."""
     try:
         calc = registry.get(args.key)
@@ -88,7 +93,7 @@ def _describe(args):
     print(f"Returns: {calc.returns}")
 
 
-def _parse_value(text):
+def _parse_value(text: str) -> Any:
     """Turn ``"998"`` into 998, ``"[1, 2]"`` into a list, and leave words as strings.
 
     JSON already knows how to read numbers, lists and true/false, so we try
@@ -100,14 +105,20 @@ def _parse_value(text):
         return text
 
 
-def _run(args):
-    """Handle ``fpc run``: call any calculation with ``name=value`` pairs."""
+def _pairs(pairs: list[str], parse: Callable[[str], Any] = _parse_value) -> dict[str, Any]:
+    """Turn ``["density=998", ...]`` into ``{"density": 998, ...}``."""
     arguments = {}
-    for pair in args.arguments:
+    for pair in pairs:
         name, sep, value = pair.partition("=")
         if not sep:
             raise SystemExit(f"expected name=value, got {pair!r}")
-        arguments[name] = _parse_value(value)
+        arguments[name] = parse(value)
+    return arguments
+
+
+def _run(args: argparse.Namespace) -> None:
+    """Handle ``fpc run``: call any calculation with ``name=value`` pairs."""
+    arguments = _pairs(args.arguments)
     try:
         result = registry.calculate(args.key, arguments)
     except (KeyError, ValueError, TypeError) as error:
@@ -115,12 +126,51 @@ def _run(args):
     print(json.dumps(result, indent=2))
 
 
-def _llms_txt(args):
+def _uncertainty(args: argparse.Namespace) -> None:
+    """Handle ``fpc uncertainty``: Monte Carlo on any calculation."""
+    from fpc.uncertainty import monte_carlo, parse_distribution
+
+    def parse(text: str) -> Any:
+        # A distribution ("normal:2,0.1") or a number; anything else (a word
+        # such as property=density_kg_m3) passes through like ``fpc run``.
+        try:
+            return parse_distribution(text)
+        except ValueError:
+            return _parse_value(text)
+
+    inputs = _pairs(args.arguments, parse)
+    output = int(args.output) if args.output and args.output.isdigit() else args.output
+    try:
+        result = monte_carlo(args.key, inputs, samples=args.samples, seed=args.seed, output=output)
+    except (KeyError, ValueError, TypeError) as error:
+        raise SystemExit(f"error: {error}") from error
+    print(json.dumps(result.summary(), indent=2))
+
+
+def _report(args: argparse.Namespace) -> None:
+    """Handle ``fpc report``: a Markdown calc sheet for one calculation."""
+    from fpc.report import calc_report
+
+    try:
+        text = calc_report(
+            args.key, _pairs(args.arguments), title=args.title, checked_by=args.checked_by
+        )
+    except (KeyError, ValueError, TypeError) as error:
+        raise SystemExit(f"error: {error}") from error
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as file:
+            file.write(text)
+        print(f"wrote {args.out}")
+    else:
+        print(text, end="")
+
+
+def _llms_txt(args: argparse.Namespace) -> None:
     """Handle ``fpc llms-txt``: print the AI-assistant index of the library."""
     print(registry.llms_txt(), end="")
 
 
-def build_parser():
+def build_parser() -> argparse.ArgumentParser:
     """Build the top-level parser with one subparser per tool."""
     parser = argparse.ArgumentParser(
         prog="fpc",
@@ -165,12 +215,37 @@ def build_parser():
     run.add_argument("arguments", nargs="*", help="inputs as name=value (SI units unless stated)")
     run.set_defaults(handler=_run)
 
+    unc = tools.add_parser(
+        "uncertainty",
+        help="Monte Carlo: run a calculation with uncertain inputs",
+        description="Inputs are name=value; make one uncertain with name=normal:MEAN,STD, "
+        "name=uniform:LOW,HIGH or name=triangular:LOW,MODE,HIGH.",
+    )
+    unc.add_argument("key", help="Domain.method, e.g. Fluids.pipe_flow")
+    unc.add_argument("arguments", nargs="*", help="inputs as name=value or name=normal:mean,std")
+    unc.add_argument("--samples", type=int, default=10_000, help="random runs (default 10000)")
+    unc.add_argument("--seed", type=int, help="fix the random numbers to repeat a run exactly")
+    unc.add_argument("--output", help="for several results: a dict key or tuple index to study")
+    unc.set_defaults(handler=_uncertainty)
+
+    report = tools.add_parser("report", help="write a Markdown calc sheet for a calculation")
+    report.add_argument("key", help="Domain.method, e.g. Fluids.reynolds_number")
+    report.add_argument(
+        "arguments", nargs="*", help="inputs as name=value (SI units unless stated)"
+    )
+    report.add_argument(
+        "--title", help="heading for the sheet (default: the calculation's summary)"
+    )
+    report.add_argument("--checked-by", default="", help="name for the 'Checked by' line")
+    report.add_argument("--out", help="write to this file instead of printing")
+    report.set_defaults(handler=_report)
+
     llms = tools.add_parser("llms-txt", help="print a compact index of the library for AI tools")
     llms.set_defaults(handler=_llms_txt)
     return parser
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> None:
     """Entry point for the ``fpc`` command.
 
     :param argv: list of arguments (defaults to the real command line);
