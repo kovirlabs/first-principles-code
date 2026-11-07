@@ -175,3 +175,7 @@ python_version = "3.11"  # check against the oldest supported Python
 packages = ["fpc"]
 ignore_missing_imports = true
 warn_unused_ignores = true
+# Every function in fpc/ must be fully annotated: the registry turns the
+# hints into JSON Schema, and a missing hint is a missing check.
+disallow_untyped_defs = true
+disallow_incomplete_defs = true

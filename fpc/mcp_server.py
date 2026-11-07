@@ -29,15 +29,25 @@ Run it::
 
     fpc-mcp                       # stdio, what desktop AI apps expect
     fpc-mcp --transport streamable-http --port 8765   # HTTP, for web front ends
+    fpc-mcp --domains fluids,thermo   # also one tool per Fluids/Thermo method
+
+``--domains`` suits capable models: each calculation becomes its own tool with
+its own schema, so the model can call it in one step instead of
+search -> describe -> calculate. Keep the list short; every tool's schema is
+sent to the model with each request.
 
 Setup for LM Studio, Ollama front ends, and Claude is in ``docs/ai.md``.
 Requires the optional ``mcp`` extra: ``pip install "first-principles-code[mcp]"``.
 """
 
 import argparse
-from collections.abc import Iterator
+import inspect
+import json
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any
+from typing import Annotated, Any
+
+from pydantic import Field, WithJsonSchema
 
 try:
     from mcp.server import MCPServer
@@ -93,13 +103,73 @@ def _explain_errors() -> Iterator[None]:
         raise ToolError(f"{type(error).__name__}: {message}") from error
 
 
-def build_server() -> MCPServer:
+def tool_name(calc: registry.Calculation) -> str:
+    """MCP tool name for a calculation: ``Fluids.reynolds_number`` -> ``fluids_reynolds_number``.
+
+    Many AI apps pass tools on to an OpenAI-style API that only accepts
+    letters, digits, ``_`` and ``-`` in a name, so the dot has to go.
+    """
+    return f"{calc.domain.lower()}_{calc.name}"
+
+
+def direct_tool(calc: registry.Calculation) -> Callable[..., dict[str, Any]]:
+    """Turn one registry calculation into a function the MCP library can serve.
+
+    The MCP library builds a tool's input schema from the function's
+    *signature*, the way FastAPI does. The domain methods themselves can't be
+    handed over: their hints (``ArrayLike``, ``Literal``) say what *Python*
+    accepts, and some inputs (a DataFrame) can't travel as JSON at all. The
+    registry already knows the JSON Schema of every input, so we build a new
+    signature from it:
+
+        * one keyword-only parameter per JSON-able input;
+        * annotated ``Annotated[Any, WithJsonSchema(schema), Field(description)]``,
+          which tells pydantic "accept anything, but *advertise* this schema".
+          The real checking happens in :func:`registry.calculate`, the same
+          doorway the CLI and the ``calculate`` tool use.
+
+    Setting ``__signature__`` is how Python lets a function describe itself
+    differently from its ``def`` line; ``inspect.signature`` (and therefore
+    pydantic and the MCP library) reads it.
+
+    :param calc: the calculation to expose
+    :returns: a function taking the calculation's inputs as keyword arguments
+    """
+
+    def run(**arguments: Any) -> dict[str, Any]:
+        with _explain_errors():
+            return {"result": registry.calculate(calc.key, arguments), "returns": calc.returns}
+
+    parameters = []
+    for p in calc.parameters:
+        if p.schema is None:
+            continue  # cannot be sent as JSON; keeps its default (json_callable checked)
+        # The description carries the unit, the most important thing for the model.
+        description = p.description + (
+            f" [{p.unit}]" if p.unit and "[" not in p.description else ""
+        )
+        annotation = Annotated[Any, WithJsonSchema(p.schema), Field(description=description)]
+        default = p.default if not p.required else inspect.Parameter.empty
+        parameters.append(
+            inspect.Parameter(
+                p.name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation
+            )
+        )
+    run.__signature__ = inspect.Signature(parameters, return_annotation=dict[str, Any])  # type: ignore[attr-defined]
+    run.__name__ = tool_name(calc)
+    return run
+
+
+def build_server(domains: Sequence[str] = ()) -> MCPServer:
     """Create the MCP server and register its tools.
 
     Kept separate from :func:`main` so tests can connect to the server
     in-process (``mcp.Client(build_server())``) without starting a subprocess.
 
+    :param domains: domain names (any case, e.g. ``["fluids", "thermo"]``)
+        whose calculations also become individual tools
     :returns: a configured ``MCPServer``
+    :raises ValueError: if a domain name is unknown
     """
     server = MCPServer("first-principles-code", instructions=INSTRUCTIONS)
 
@@ -146,16 +216,25 @@ def build_server() -> MCPServer:
             return registry.get(key).to_dict()
 
     @server.tool()
-    def calculate(key: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    def calculate(key: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
         """Run a calculation and return its exact result.
 
         key: "Domain.method", e.g. "Fluids.reynolds_number".
-        arguments: keyword arguments, each in the unit given by
-        describe_calculation, e.g. {"density": 998, "velocity": 2,
-        "length": 0.05, "viscosity": 0.001}.
+        arguments: an object holding the inputs, each in the unit given by
+        describe_calculation. Nest them, e.g. {"key": "Fluids.reynolds_number",
+        "arguments": {"density": 998, "velocity": 2, "length": 0.05, "viscosity": 0.001}}.
         """
         with _explain_errors():
             calc = registry.get(key)
+            if arguments is None:
+                # Small models often put the inputs next to "key" instead of
+                # inside "arguments". The MCP library drops unknown keys before
+                # we see them, so all we can do is say exactly what to send.
+                example = {p.name: f"<{p.unit or 'value'}>" for p in calc.parameters if p.required}
+                raise ToolError(
+                    'the inputs must be nested inside "arguments", like this: '
+                    + json.dumps({"key": key, "arguments": example})
+                )
             result = registry.calculate(key, arguments)
         units = {p.name: p.unit for p in calc.parameters}
         return {
@@ -177,6 +256,18 @@ def build_server() -> MCPServer:
         props = Properties()
         return {name: list(props.load_table(name=name).columns) for name in props.list_tables()}
 
+    known = {name.lower(): name for name in registry.domains()}
+    unknown = sorted({d.lower() for d in domains} - set(known))
+    if unknown:
+        raise ValueError(f"unknown domain(s) {unknown}; choose from {sorted(known.values())}")
+    wanted = {known[d.lower()] for d in domains}
+    for calc in registry.calculations():
+        if calc.domain in wanted and calc.json_callable:
+            # The description is what the model reads to choose a tool, so
+            # lead with the summary and finish with what comes back.
+            description = f"{calc.description}\n\nReturns: {calc.returns}".strip()
+            server.add_tool(direct_tool(calc), name=tool_name(calc), description=description)
+
     return server
 
 
@@ -196,9 +287,18 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("--host", default="127.0.0.1", help="HTTP bind address (default 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8765, help="HTTP port (default 8765)")
+    parser.add_argument(
+        "--domains",
+        default="",
+        help="comma-separated domains whose calculations also become individual tools, "
+        "e.g. fluids,thermo (for capable models; keep it short)",
+    )
     args = parser.parse_args(argv)
 
-    server = build_server()
+    try:
+        server = build_server([d.strip() for d in args.domains.split(",") if d.strip()])
+    except ValueError as error:
+        parser.error(str(error))
     if args.transport == "stdio":
         server.run("stdio")
     else:

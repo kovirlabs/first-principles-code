@@ -40,13 +40,16 @@ from fpc.design import Design
 from fpc.dicom import Dicom
 from fpc.dynamics import Dynamics
 from fpc.electrical import Electrical
+from fpc.fatigue import Fatigue
 from fpc.fluids import Fluids
 from fpc.gear import Gear
+from fpc.machine_elements import MachineElements
 from fpc.material import Material
 from fpc.mechatronics import Mechatronics
 from fpc.modal import Modal
 from fpc.mri import MRI
 from fpc.properties import Properties
+from fpc.psychrometrics import Psychrometrics
 
 # Medical imaging / radiology classes.
 from fpc.radiation import Radiation
@@ -67,6 +70,9 @@ __all__ = [
     "Fluids",
     "Material",
     "Gear",
+    "MachineElements",
+    "Fatigue",
+    "Psychrometrics",
     "Electrical",
     "Mechatronics",
     "Controls",

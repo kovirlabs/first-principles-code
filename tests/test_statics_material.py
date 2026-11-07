@@ -3,6 +3,8 @@
 
 """Tests for fpc.statics.Statics and fpc.material.Material."""
 
+import math
+
 import pytest
 
 from fpc.material import Material
@@ -81,3 +83,74 @@ def test_thermal_expansion_scales_with_temperature():
         delta_temperature=100.0,
     )
     assert big == pytest.approx(2 * small)
+
+
+# --- Column buckling: Euler vs Johnson ---------------------------------------
+# Formulas: Shigley's Mechanical Engineering Design, 10th ed., Ch. 4,
+# "Columns with Central Loading" (Euler) and "Intermediate-Length Columns with
+# Central Loading" (J. B. Johnson parabola). The numbers below are independent
+# hand calculations, not values copied from the book.
+
+# A 25 mm solid round steel bar: A = pi d^2/4, I = pi d^4/64, so r = d/4.
+_D = 0.025
+_AREA = math.pi * _D**2 / 4
+_I = math.pi * _D**4 / 64
+_E = 200e9
+_SY = 250e6
+
+
+def test_radius_of_gyration_of_a_round_bar_is_quarter_diameter():
+    assert material.radius_of_gyration(moment_of_inertia=_I, area=_AREA) == pytest.approx(_D / 4)
+
+
+def test_slenderness_ratios():
+    # KL/r for a 1 m pinned column with r = 6.25 mm: 1 / 0.00625 = 160.
+    assert material.slenderness_ratio(length=1.0, radius_of_gyration=_D / 4) == pytest.approx(160.0)
+    # Hand calc: sqrt(2 pi^2 * 200e9 / 250e6) = pi * sqrt(1600) = 40 pi = 125.66.
+    transition = material.transition_slenderness_ratio(modulus=_E, yield_strength=_SY)
+    assert transition == pytest.approx(40 * math.pi)
+
+
+def test_johnson_meets_euler_at_the_transition_with_half_the_yield_load():
+    """At (KL/r)_1 both formulas give P = A*Sy/2, so the combined curve is continuous."""
+    transition = material.transition_slenderness_ratio(modulus=_E, yield_strength=_SY)
+    common = {"modulus": _E, "moment_of_inertia": _I, "length": transition * _D / 4}
+    euler = material.euler_buckling_load(**common)
+    johnson = material.johnson_buckling_load(**common, area=_AREA, yield_strength=_SY)
+    assert euler == pytest.approx(_AREA * _SY / 2)
+    assert johnson == pytest.approx(_AREA * _SY / 2)
+
+
+def test_johnson_hand_calculation():
+    """L = 0.5 m pinned: KL/r = 80, Pcr/A = 250e6 - (250e6 * 80 / (2 pi))^2 / 200e9."""
+    load = material.johnson_buckling_load(
+        modulus=_E, moment_of_inertia=_I, area=_AREA, length=0.5, yield_strength=_SY
+    )
+    # (250e6 * 80 / 2pi)^2 / 200e9 = (3.1831e9)^2 / 200e9 = 50.66 MPa -> 199.34 MPa
+    assert load / _AREA == pytest.approx(199.34e6, rel=1e-4)
+
+
+@pytest.mark.parametrize(("length", "formula"), [(0.5, "johnson"), (1.0, "euler")])
+def test_critical_buckling_load_picks_the_right_formula(length, formula):
+    result = material.critical_buckling_load(
+        modulus=_E, moment_of_inertia=_I, area=_AREA, length=length, yield_strength=_SY
+    )
+    assert result["formula"] == formula
+    if formula == "euler":
+        expected = material.euler_buckling_load(modulus=_E, moment_of_inertia=_I, length=length)
+    else:
+        expected = material.johnson_buckling_load(
+            modulus=_E, moment_of_inertia=_I, area=_AREA, length=length, yield_strength=_SY
+        )
+    assert result["critical_load"] == pytest.approx(expected)
+    # Neither formula may exceed the squash load A*Sy.
+    assert result["critical_load"] < _AREA * _SY
+
+
+def test_buckling_rejects_bad_inputs():
+    with pytest.raises(ValueError):
+        material.radius_of_gyration(moment_of_inertia=-1.0, area=1.0)
+    with pytest.raises(ValueError):
+        material.transition_slenderness_ratio(modulus=_E, yield_strength=0.0)
+    with pytest.raises(ValueError):
+        material.slenderness_ratio(length=0.0, radius_of_gyration=0.01)

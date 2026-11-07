@@ -54,6 +54,21 @@ instance of the class named in the heading, e.g. `fpc.CT().apply_window(...)`.
 - `rc_time_constant(resistance [ohm], capacitance [F])`: Time constant of an RC circuit: tau = R * C.
 - `series_resistance(resistances [ohm])`: Total resistance of resistors in series (they simply add).
 
+## Fatigue
+
+- `asme_elliptic_safety_factor(alternating_stress [Pa], mean_stress [Pa], endurance_limit [Pa], yield_strength [Pa])`: Fatigue safety factor, ASME-elliptic: (n*sa/Se)^2 + (n*sm/Sy)^2 = 1.
+- `cycles_to_failure(alternating_stress [Pa], ultimate_strength [Pa], endurance_limit [Pa], fatigue_strength_fraction [-]=…)`: Cycles to failure under fully reversed stress: N = (sigma_a / a)^(1/b).
+- `endurance_limit_steel(ultimate_strength [Pa])`: Rotating-beam endurance limit estimate for steels, Shigley Eq. 6-8.
+- `gerber_safety_factor(alternating_stress [Pa], mean_stress [Pa], endurance_limit [Pa], ultimate_strength [Pa])`: Fatigue safety factor, Gerber parabola: n*sa/Se + (n*sm/Sut)^2 = 1.
+- `goodman_safety_factor(alternating_stress [Pa], mean_stress [Pa], endurance_limit [Pa], ultimate_strength [Pa])`: Fatigue safety factor, modified Goodman line: 1/n = sa/Se + sm/Sut.
+- `load_factor(loading)`: Marin load factor kc, Shigley Eq. 6-26: 1 bending, 0.85 axial, 0.59 torsion.
+- `marin_endurance_limit(specimen_endurance_limit [Pa], surface_factor [-]=…, size_factor [-]=…, load_factor [-]=…, temperature_factor [-]=…, reliability_factor [-]=…, miscellaneous_factor [-]=…)`: Endurance limit of the real part: Se = ka*kb*kc*kd*ke*kf * Se', Shigley Eq. 6-18.
+- `reliability_factor(reliability [-])`: Marin reliability factor ke = 1 - 0.08 * za, Shigley Table 6-5.
+- `size_factor(diameter [m], loading=…)`: Marin size factor kb for a round bar, Shigley Eq. 6-20.
+- `sn_curve_coefficients(ultimate_strength [Pa], endurance_limit [Pa], fatigue_strength_fraction [-]=…)`: Basquin S-N line Sf = a * N^b through (10^3, f*Sut) and (10^6, Se).
+- `soderberg_safety_factor(alternating_stress [Pa], mean_stress [Pa], endurance_limit [Pa], yield_strength [Pa])`: Fatigue safety factor, Soderberg line: 1/n = sa/Se + sm/Sy.
+- `surface_factor(ultimate_strength [Pa], finish)`: Marin surface factor ka = a * Sut^b, Shigley Eq. 6-19 / Table 6-2.
+
 ## Fluids
 
 - `bernoulli_pressure(density [kg/m^3], velocity_1 [m/s], height_1 [m], pressure_1 [Pa], velocity_2 [m/s], height_2 [m], gravity [m/s^2]=…)`: Downstream static pressure from Bernoulli's equation.
@@ -82,14 +97,36 @@ instance of the class named in the heading, e.g. `fpc.CT().apply_window(...)`.
 - `t1_recovery(time_ms [ms], t1_ms [ms], equilibrium_magnetization [-]=…)`: Longitudinal recovery after a 90 deg pulse:  Mz = M0 * (1 - exp(-t/T1)).
 - `t2_decay(time_ms [ms], t2_ms [ms], initial_magnetization [-]=…)`: Transverse decay:  Mxy = M0 * exp(-t/T2).
 
+## MachineElements
+
+- `bearing_l10_life(dynamic_load_rating [N], equivalent_load [N], bearing_type=…)`: Bearing rating life L10 = (C / P)^a, in millions of revolutions.
+- `bearing_l10_life_hours(dynamic_load_rating [N], equivalent_load [N], speed_rpm [rev/min], bearing_type=…)`: Bearing rating life in operating hours: L10h = L10 * 1e6 / (60 * n).
+- `bearing_required_load_rating(equivalent_load [N], life_hours [h], speed_rpm [rev/min], bearing_type=…)`: Catalogue rating C needed to reach a target L10 life: C = P * L10^(1/a).
+- `bolt_preload(proof_strength [Pa], tensile_stress_area [m^2], connection=…)`: Recommended bolt preload as a fraction of the proof load.
+- `bolt_stiffness(modulus [Pa], nominal_diameter [m], tensile_stress_area [m^2], unthreaded_length [m], threaded_length [m])`: Axial stiffness of a bolt within the grip: kb = Ad*At*E / (Ad*lt + At*ld).
+- `bolt_tightening_torque(preload [N], nominal_diameter [m], torque_coefficient [-]=…)`: Wrench torque needed to reach a bolt preload: T = K * Fi * d.
+- `bolted_joint_loads(preload [N], external_load [N], stiffness_constant [-])`: Bolt and member forces in a preloaded joint under an external tensile load.
+- `fillet_weld_shear_stress(force [N], leg_size [m], weld_length [m])`: Average shear stress on a fillet weld throat: tau = F / (0.707 * h * L).
+- `joint_stiffness_constant(bolt_stiffness [N/m], member_stiffness [N/m])`: Joint constant C = kb / (kb + km): the bolt's share of an external load.
+- `member_stiffness(modulus [Pa], nominal_diameter [m], grip_length [m])`: Stiffness of the clamped members, using 30-degree pressure cones.
+- `shaft_diameter_de_goodman(alternating_moment [N*m], mean_moment [N*m], alternating_torque [N*m], mean_torque [N*m], endurance_limit [Pa], ultimate_strength [Pa], safety_factor [-], fatigue_factor_bending [-]=…, fatigue_factor_torsion [-]=…)`: Solid shaft diameter for fatigue (DE-Goodman criterion), Shigley Eq. 7-8.
+- `shaft_diameter_static(bending_moment [N*m], torque [N*m], yield_strength [Pa], safety_factor [-])`: Solid shaft diameter for steady bending + torsion (von Mises yield).
+- `spring_rate(wire_diameter [m], mean_coil_diameter [m], active_coils [-], shear_modulus [Pa])`: Rate of a helical compression spring: k = d^4 * G / (8 * D^3 * Na).
+- `spring_shear_stress(force [N], wire_diameter [m], mean_coil_diameter [m], correction=…)`: Maximum wire shear stress in a helical spring: tau = K * 8*F*D / (pi*d^3).
+
 ## Material
 
 - `axial_deformation(force [N], length [m], area [m^2], modulus [Pa])`: Axial stretch/compression of a bar: dL = F*L / (A*E).
 - `bending_stress(moment [N*m], distance [m], moment_of_inertia [m^4])`: Bending (flexural) stress in a beam: sigma = M*c / I.
+- `critical_buckling_load(modulus [Pa], moment_of_inertia [m^4], area [m^2], length [m], yield_strength [Pa], end_factor [-]=…)`: Critical column load, choosing Euler or Johnson from the slenderness ratio.
 - `euler_buckling_load(modulus [Pa], moment_of_inertia [m^4], length [m], end_factor [-]=…)`: Critical buckling load of a slender column (Euler's formula).
+- `johnson_buckling_load(modulus [Pa], moment_of_inertia [m^4], area [m^2], length [m], yield_strength [Pa], end_factor [-]=…)`: Critical load of an intermediate column (J. B. Johnson parabola).
+- `radius_of_gyration(moment_of_inertia [m^4], area [m^2])`: Radius of gyration r = sqrt(I / A).
+- `slenderness_ratio(length [m], radius_of_gyration [m], end_factor [-]=…)`: Slenderness ratio of a column: KL / r.
 - `strain(change_in_length [m], original_length [m])`: Engineering strain: epsilon = dL / L0 (dimensionless).
 - `stress(force [N], area [m^2])`: Engineering stress: sigma = F / A.
 - `thermal_expansion(coefficient [1/K], original_length [m], delta_temperature [K])`: Length change from temperature: dL = alpha * L0 * dT.
+- `transition_slenderness_ratio(modulus [Pa], yield_strength [Pa])`: Slenderness ratio where Euler hands over to Johnson: sqrt(2*pi^2*E / Sy).
 - `youngs_modulus(stress [Pa], strain [-])`: Young's modulus (stiffness) from Hooke's law: E = sigma / strain.
 
 ## Mechatronics
@@ -119,6 +156,19 @@ instance of the class named in the heading, e.g. `fpc.CT().apply_window(...)`.
 - `material(name)`: Return one material's properties as a plain dictionary.
 - `water_liquid(temperature_c [degC], property, method=…)`: Liquid water property at 1 atm and a given temperature.
 - `water_saturation(temperature_c [degC], property, method=…)`: Saturated-water property at a temperature (a steam-table lookup).
+
+## Psychrometrics
+
+- `dew_point(temperature_c [degC], relative_humidity [-])`: Dew-point temperature: the t_d where pws(t_d) equals the actual pw.
+- `humidity_ratio(vapor_pressure [Pa], pressure [Pa]=…)`: Humidity ratio W = 0.621945 * pw / (p - pw), ASHRAE 2017 Ch. 1 Eq. 20.
+- `humidity_ratio_from_relative_humidity(temperature_c [degC], relative_humidity [-], pressure [Pa]=…)`: Humidity ratio from dry bulb and relative humidity: W(phi * pws(t), p).
+- `moist_air_enthalpy(temperature_c [degC], humidity_ratio [kg/kg dry air])`: Specific enthalpy of moist air, ASHRAE 2017 Ch. 1 Eq. 32.
+- `relative_humidity(temperature_c [degC], vapor_pressure [Pa])`: Relative humidity phi = pw / pws(t).
+- `saturation_vapor_pressure(temperature_c [degC], phase=…)`: Saturation pressure of water vapour (Hyland-Wexler), ASHRAE 2017 Ch. 1 Eqs. 5-6.
+- `specific_volume(temperature_c [degC], humidity_ratio [kg/kg dry air], pressure [Pa]=…)`: Moist-air specific volume, v = Ra * T * (1 + 1.607858*W) / p.
+- `standard_pressure(altitude [m])`: Standard-atmosphere pressure at an altitude, ASHRAE 2017 Ch. 1 Eq. 3.
+- `vapor_pressure(humidity_ratio [kg/kg dry air], pressure [Pa]=…)`: Vapour partial pressure from humidity ratio: pw = p * W / (0.621945 + W).
+- `wet_bulb(temperature_c [degC], relative_humidity [-], pressure [Pa]=…)`: Thermodynamic wet-bulb temperature from dry bulb and RH (iterative).
 
 ## Radiation
 

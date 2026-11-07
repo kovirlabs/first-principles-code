@@ -166,7 +166,9 @@ class Modal:
         time = np.asarray(time, dtype=float)
         displacement = np.asarray(displacement, dtype=float)
 
-        def model(t, amplitude, zeta, omega_n, phase):
+        def model(
+            t: FloatArray, amplitude: float, zeta: float, omega_n: float, phase: float
+        ) -> FloatArray:
             omega_d = omega_n * np.sqrt(1 - zeta**2)
             return amplitude * np.exp(-zeta * omega_n * t) * np.cos(omega_d * t + phase)
 
